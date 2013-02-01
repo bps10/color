@@ -75,19 +75,15 @@ class colorModel():
 
         smVl = ((const['Q1'] * (const['S'] * S_cones + (1. - const['S'])
                  * M_cones) - (1. - const['Q1']) * L_cones) / lensMacula)
-        smVl = (smVl) - np.mean(smVl)
 
         slVm = ((const['Q2'] * (const['S'] * S_cones + (1. - const['S'])
          * L_cones) - (1. - const['Q2']) * M_cones) / lensMacula)
-        slVm = slVm - np.mean(slVm)
 
         mVl = ((const['Q3'] * M_cones) - ((1. - const['Q3']) *
                  L_cones)) / lensMacula
-        mVl = mVl - np.mean(mVl)
 
         lVm = ((const['Q4'] * L_cones) - ((1. - const['Q4'])
                 * M_cones)) / lensMacula
-        lVm = lVm - np.mean(lVm)
 
         self.SecondStage = {
             'lambdas': self.FirstStage['lambdas'],
@@ -108,6 +104,10 @@ class colorModel():
             'redGreen': redGreen,
             'blueYellow': blueYellow,
             }
+
+    #def findChannel(self):
+    #    fun1 = lambda q1, s: (q1 * (s * S_cones + (1 - s) * M_cones) -
+    #                    (1 - q1) * L_cones) / lensMacula
 
     def getStockmanFilter(self):
 
