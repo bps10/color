@@ -1,7 +1,7 @@
 # -*- coding: utf-8 *-*
 from __future__ import division
 import numpy as np
-from scipy.optimize import minimize,fmin
+from scipy.optimize import fsolve
 import matplotlib.pylab as plt
 
 from spectsens import spectsens
@@ -64,34 +64,20 @@ class colorModel():
         M_cones = self.FirstStage['M_cones']
         S_cones = self.FirstStage['S_cones']
 
-        lensMacula = self.getStockmanFilter()
-
-        const = {
-            'S': 0.05,
-            'Q1': 0.570641738067942,
-            'Q2': 0.451415754843724,
-            'Q3': 0.55983450938795,
-            'Q4': 0.44016549061205,
-            }
-
-        self.ss = self.optimizeChannel(cones={'S': S_cones, '1': M_cones,
+        smVl = self.optimizeChannel(cones={'S': S_cones, '1': M_cones,
                              '2': L_cones, }, sConst=0.05)
 
-        smVl = ((const['Q1'] * (const['S'] * S_cones + (1. - const['S'])
-                 * M_cones) - (1. - const['Q1']) * L_cones) / lensMacula)
+        slVm = self.optimizeChannel(cones={'S': S_cones, '1': L_cones,
+                             '2': M_cones, }, sConst=0.05)
 
-        slVm = ((const['Q2'] * (const['S'] * S_cones + (1. - const['S'])
-         * L_cones) - (1. - const['Q2']) * M_cones) / lensMacula)
+        mVl = self.optimizeChannel(cones={'1': M_cones, '2': L_cones, },
+                                    sConst=0.05)
 
-        mVl = ((const['Q3'] * M_cones) - ((1. - const['Q3']) *
-                 L_cones)) / lensMacula
-
-        lVm = ((const['Q4'] * L_cones) - ((1. - const['Q4'])
-                * M_cones)) / lensMacula
+        lVm = self.optimizeChannel(cones={'1': L_cones, '2': M_cones, },
+                                    sConst=0.05)
 
         self.SecondStage = {
             'lambdas': self.FirstStage['lambdas'],
-            'const': const,
             'smVl': smVl,
             'slVm': slVm,
             'lVm': lVm,
@@ -113,29 +99,25 @@ class colorModel():
 
         lensMacula = self.getStockmanFilter()
 
-        if '1' and '2' in cones:
+        if 'S' in cones:
             fun = lambda q1, Cone1, Cone2, Scone: (q1 * (sConst * Scone +
                     (1 - sConst) * Cone1) - (1 - q1) *
                     Cone2) / lensMacula
-
             # error function to minimize
             err = lambda q1, Cone1, Cone2, Scone: (fun(q1, Cone1, Cone2,
                                                 Scone)).sum()
-            Cone1 = cones['1']
-            Cone2 = cones['2']
-            Scone = cones['S']
-            out = fmin(err, 0, args=(Cone1, Cone2, Scone))
-            print out
+
+            con = fsolve(err, 10, args=(cones['1'], cones['2'], cones['S']))
+            out = fun(con, cones['1'], cones['2'], cones['S'])
 
         else:
-            fun = lambda q1, Cone1, Scone: (q1 * Scone + (1 - q1) *
-                    Cone1) / lensMacula
-
+            fun = lambda q1, Cone1, Cone2: (q1 * Cone1 - (1 - q1) *
+                    Cone2) / lensMacula
             # error function to minimize
-            err = lambda q1, Cone1, Scone: (fun(q1, Cone1, Scone)).sum()
+            err = lambda q1, Cone1, Cone2: (fun(q1, Cone1, Cone2)).sum()
 
-            out = fmin(err, 0, args=(cones['1'], cones['S']))
-            print out
+            con = fsolve(err, -10, args=(cones['1'], cones['2']))
+            out = fun(con, cones['1'], cones['2'])
 
         return out
 
