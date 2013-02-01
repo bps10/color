@@ -1,6 +1,7 @@
 # -*- coding: utf-8 *-*
 from __future__ import division
 import numpy as np
+from scipy.optimize import minimize,fmin
 import matplotlib.pylab as plt
 
 from spectsens import spectsens
@@ -73,6 +74,9 @@ class colorModel():
             'Q4': 0.44016549061205,
             }
 
+        self.ss = self.optimizeChannel(cones={'S': S_cones, '1': M_cones,
+                             '2': L_cones, }, sConst=0.05)
+
         smVl = ((const['Q1'] * (const['S'] * S_cones + (1. - const['S'])
                  * M_cones) - (1. - const['Q1']) * L_cones) / lensMacula)
 
@@ -105,9 +109,35 @@ class colorModel():
             'blueYellow': blueYellow,
             }
 
-    #def findChannel(self):
-    #    fun1 = lambda q1, s: (q1 * (s * S_cones + (1 - s) * M_cones) -
-    #                    (1 - q1) * L_cones) / lensMacula
+    def optimizeChannel(self, cones, sConst):
+
+        lensMacula = self.getStockmanFilter()
+
+        if '1' and '2' in cones:
+            fun = lambda q1, Cone1, Cone2, Scone: (q1 * (sConst * Scone +
+                    (1 - sConst) * Cone1) - (1 - q1) *
+                    Cone2) / lensMacula
+
+            # error function to minimize
+            err = lambda q1, Cone1, Cone2, Scone: (fun(q1, Cone1, Cone2,
+                                                Scone)).sum()
+            Cone1 = cones['1']
+            Cone2 = cones['2']
+            Scone = cones['S']
+            out = fmin(err, 0, args=(Cone1, Cone2, Scone))
+            print out
+
+        else:
+            fun = lambda q1, Cone1, Scone: (q1 * Scone + (1 - q1) *
+                    Cone1) / lensMacula
+
+            # error function to minimize
+            err = lambda q1, Cone1, Scone: (fun(q1, Cone1, Scone)).sum()
+
+            out = fmin(err, 0, args=(cones['1'], cones['S']))
+            print out
+
+        return out
 
     def getStockmanFilter(self):
 
