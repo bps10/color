@@ -12,7 +12,7 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.5, 's': 0.01, },
+                ConeRatio={'fracLvM': 0.05, 's': 0.01, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, },
                 startLambda=390,
                 endLambda=750,
@@ -67,17 +67,21 @@ class colorModel():
         M_cones = self.FirstStage['M_cones']
         S_cones = self.FirstStage['S_cones']
 
-        smVl = self.optimizeChannel(cones={'S': S_cones, '1': M_cones,
-                             '2': L_cones, }, ConeRatio=ConeRatio)
+        smVl = self.optimizeChannel(cones={'s': S_cones, 'm': M_cones,
+                             'l': L_cones, }, xCone=L_cones,
+                                 ConeRatio=ConeRatio)
 
-        slVm = self.optimizeChannel(cones={'S': S_cones, '1': L_cones,
-                             '2': M_cones, }, ConeRatio=ConeRatio)
+        slVm = self.optimizeChannel(cones={'s': S_cones, 'm': M_cones,
+                             'l': L_cones, }, xCone=M_cones,
+                                 ConeRatio=ConeRatio)
 
-        mVl = self.optimizeChannel(cones={'1': M_cones, '2': L_cones, },
-                                    ConeRatio=ConeRatio)
+        mVl = self.optimizeChannel(cones={'s': 0, 'm': M_cones,
+                             'l': L_cones, }, xCone=L_cones,
+                                 ConeRatio=ConeRatio)
 
-        lVm = self.optimizeChannel(cones={'1': L_cones, '2': M_cones, },
-                                    ConeRatio=ConeRatio)
+        lVm = self.optimizeChannel(cones={'s': 0, 'm': M_cones,
+                             'l': L_cones, }, xCone=M_cones,
+                                 ConeRatio=ConeRatio)
 
         self.SecondStage = {
             'lambdas': self.FirstStage['lambdas'],
@@ -98,25 +102,26 @@ class colorModel():
             'blueYellow': blueYellow,
             }
 
-    def optimizeChannel(self, cones, ConeRatio):
+    def optimizeChannel(self, cones, xCone, ConeRatio):
 
         sRatio = ConeRatio['s']
-        #lRatio = (1 - sRatio) * ConeRatio['fracLvM']
-        #mRatio = (1 - sRatio) * (1 - ConeRatio['fracLvM'])
+        lRatio = (1 - sRatio) * ConeRatio['fracLvM']
+        mRatio = (1 - sRatio) * (1 - ConeRatio['fracLvM'])
 
         lensMacula = self.getStockmanFilter()
 
-        if 'S' in cones:
-            fun = lambda w, Cone1, Cone2, Scone: (w * (sRatio * Scone +
-                    (1 - sRatio) * Cone1) - (1 - w) *
-                    Cone2) / lensMacula
-            # error function to minimize
-            err = lambda w, Cone1, Cone2, Scone: (fun(w, Cone1, Cone2,
-                                                Scone)).sum()
+        #if 'S' in cones:
+        fun = lambda w, cones, xCone: (w * (sRatio * cones['s'] +
+                                            mRatio * cones['m'] +
+                                            lRatio + cones['l']) -
+                                        (1 - w) * xCone) / lensMacula
 
-            con = fsolve(err, 10, args=(cones['1'], cones['2'], cones['S']))
-            out = fun(con, cones['1'], cones['2'], cones['S'])
+        # error function to minimize
+        err = lambda w, cones, xCone: (fun(w, cones, xCone)).sum()
 
+        con = fsolve(err, 1, args=(cones, xCone))
+        out = fun(con, cones, xCone)
+        '''
         else:
             fun = lambda w, Cone1, Cone2: (w * Cone1 - (1 - w) *
                     Cone2) / lensMacula
@@ -125,7 +130,7 @@ class colorModel():
 
             con = fsolve(err, -10, args=(cones['1'], cones['2']))
             out = fun(con, cones['1'], cones['2'])
-
+        '''
         return out
 
     def getStockmanFilter(self):
