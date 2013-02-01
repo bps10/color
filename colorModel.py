@@ -10,9 +10,10 @@ from sompy import SOM
 
 class colorModel():
 
-    def __init__(self, LMSpercent={'l': 61, 'm': 32, 's': 7, },
+    def __init__(self,
+                LMSpercent={'l': 61, 'm': 32, 's': 7, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, },
-                startLambda=390, endLambda=750, step=1, physio=False):
+                startLambda=390, endLambda=750, step=1):
 
         if startLambda < 390 or endLambda > 750:
             raise IOError('lambdas must between 390 and 830')
@@ -24,7 +25,7 @@ class colorModel():
         self.ThirdStage = {}
 
         self.genFirstStage(maxSens, startLambda, endLambda, step)
-        self.genSecondStage(LMSpercent, physio)
+        self.genSecondStage(LMSpercent)
         self.genThirdStage()
 
     def genFirstStage(self, maxSens, startLambda, endLambda, step,
@@ -56,119 +57,57 @@ class colorModel():
             'S_cones': S_cones,
             }
 
-    def genSecondStage(self, LMSpercent, physio=False):
+    def genSecondStage(self, LMSpercent):
 
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
         S_cones = self.FirstStage['S_cones']
 
-        if physio:
-            LMS = (LMSpercent['l'] * L_cones +
-            LMSpercent['m'] * M_cones +
-            LMSpercent['s'] * S_cones)
+        lensMacula = self.getStockmanFilter()
 
-            SBG_ON = (100 * S_cones) - LMS
-            SBG_OFF = LMS - (100 * S_cones)
+        const = {
+            'S': 0.05,
+            'Q1': 0.570641738067942,
+            'Q2': 0.451415754843724,
+            'Q3': 0.55983450938795,
+            'Q4': 0.44016549061205,
+            }
 
-            mid_ON_Y = (100 * L_cones) - LMS
-            mid_OFF_B = LMS - (100 * L_cones)
+        smVl = ((const['Q1'] * (const['S'] * S_cones + (1. - const['S'])
+                 * M_cones) - (1. - const['Q1']) * L_cones) / lensMacula)
+        smVl = (smVl) - np.mean(smVl)
 
-            mid_ON_G = (100 * M_cones) - LMS
-            mid_OFF_R = LMS - (100 * M_cones)
+        slVm = ((const['Q2'] * (const['S'] * S_cones + (1. - const['S'])
+         * L_cones) - (1. - const['Q2']) * M_cones) / lensMacula)
+        slVm = slVm - np.mean(slVm)
 
-            self.SecondStage = {
-                'lambdas': self.FirstStage['lambdas'],
-                'SBG_ON': SBG_ON,
-                'SBG_OFF': SBG_OFF,
-                'mid_ON_Y': mid_ON_Y,
-                'mid_ON_G': mid_ON_G,
-                'mid_OFF_R': mid_OFF_R,
-                'mid_OFF_B': mid_OFF_B,
-                }
-        else:
+        mVl = ((const['Q3'] * M_cones) - ((1. - const['Q3']) *
+                 L_cones)) / lensMacula
+        mVl = mVl - np.mean(mVl)
 
-            lensMacula = self.getStockmanFilter()
+        lVm = ((const['Q4'] * L_cones) - ((1. - const['Q4'])
+                * M_cones)) / lensMacula
+        lVm = lVm - np.mean(lVm)
 
-            const = {
-                'S': 0.05,
-                'Q1': 0.570641738067942,
-                'Q2': 0.451415754843724,
-                'Q3': 0.55983450938795,
-                'Q4': 0.44016549061205,
-                }
-
-            smVl = ((const['Q1'] * (const['S'] * S_cones + (1. - const['S'])
-                     * M_cones) - (1. - const['Q1']) * L_cones) / lensMacula)
-            smVl = (smVl) - np.mean(smVl)
-
-            slVm = ((const['Q2'] * (const['S'] * S_cones + (1. - const['S'])
-             * L_cones) - (1. - const['Q2']) * M_cones) / lensMacula)
-            slVm = slVm - np.mean(slVm)
-
-            mVl = ((const['Q3'] * M_cones) - ((1. - const['Q3']) *
-                     L_cones)) / lensMacula
-            mVl = mVl - np.mean(mVl)
-
-            lVm = ((const['Q4'] * L_cones) - ((1. - const['Q4'])
-                    * M_cones)) / lensMacula
-            lVm = lVm - np.mean(lVm)
-
-            self.SecondStage = {
-                'lambdas': self.FirstStage['lambdas'],
-                'const': const,
-                'smVl': smVl,
-                'slVm': slVm,
-                'lVm': lVm,
-                'mVl': mVl,
-                }
+        self.SecondStage = {
+            'lambdas': self.FirstStage['lambdas'],
+            'const': const,
+            'smVl': smVl,
+            'slVm': slVm,
+            'lVm': lVm,
+            'mVl': mVl,
+            }
 
     def genThirdStage(self):
 
-        if 'SBG_ON' in self.SecondStage:
-            dark = (self.SecondStage['mid_OFF_R']
-                    + self.SecondStage['mid_OFF_B']
-                    + self.SecondStage['SBG_OFF'])
+        redGreen = self.SecondStage['smVl'] - self.SecondStage['mVl']
+        blueYellow = self.SecondStage['slVm'] - self.SecondStage['lVm']
 
-            light = (self.SecondStage['mid_ON_Y']
-                    + self.SecondStage['mid_ON_G']
-                    + self.SecondStage['SBG_ON'])
-
-            red = (self.SecondStage['mid_ON_Y']
-                    + self.SecondStage['mid_OFF_R']
-                    + self.SecondStage['SBG_ON'])
-
-            yellow = (self.SecondStage['mid_ON_Y']
-                    + self.SecondStage['mid_OFF_R']
-                    + self.SecondStage['SBG_OFF'])
-
-            green = (self.SecondStage['mid_OFF_B']
-                    + self.SecondStage['mid_ON_G']
-                    + self.SecondStage['SBG_OFF'])
-
-            blue = (self.SecondStage['mid_OFF_B']
-                    + self.SecondStage['mid_ON_G']
-                    + self.SecondStage['SBG_ON'])
-
-            self.ThirdStage = {
-                'lambdas': self.FirstStage['lambdas'],
-                'dark': dark,
-                'light': light,
-                'red': red,
-                'green': green,
-                'blue': blue,
-                'yellow': yellow,
-                }
-
-        if 'smVl' in self.SecondStage:
-
-            redGreen = self.SecondStage['smVl'] - self.SecondStage['mVl']
-            blueYellow = self.SecondStage['slVm'] - self.SecondStage['lVm']
-
-            self.ThirdStage = {
-                'lambdas': self.FirstStage['lambdas'],
-                'redGreen': redGreen,
-                'blueYellow': blueYellow,
-                }
+        self.ThirdStage = {
+            'lambdas': self.FirstStage['lambdas'],
+            'redGreen': redGreen,
+            'blueYellow': blueYellow,
+            }
 
     def getStockmanFilter(self):
 
@@ -226,19 +165,6 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
                   FirstStage['wavelen']['endWave']])
     #ax1.set_ylabel('sensitivity')
 
-    if 'SBG_ON' in SecondStage:
-
-        ax2 = fig.add_subplot(312)
-        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
-        ax2.plot(SecondStage['lambdas'], SecondStage['SBG_ON'],
-                'b', linewidth=3)
-        ax2.plot(SecondStage['lambdas'], SecondStage['mid_ON_Y'],
-                'r', linewidth=3)
-        ax2.plot(SecondStage['lambdas'], SecondStage['mid_ON_G'],
-                'g', linewidth=3)
-        ax2.set_xlim([FirstStage['wavelen']['startWave'],
-                      FirstStage['wavelen']['endWave']])
-
     if 'smVl' in SecondStage:
 
         ax2 = fig.add_subplot(312)
@@ -253,15 +179,6 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
                 'g', linewidth=3)
         ax2.set_xlim([FirstStage['wavelen']['startWave'],
                       FirstStage['wavelen']['endWave']])
-
-    if 'red' in ThirdStage:
-
-        ax3 = fig.add_subplot(313)
-        pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
-        ax3.plot(ThirdStage['lambdas'], ThirdStage['red'],
-                'r', linewidth=3)
-        ax3.plot(ThirdStage['lambdas'], ThirdStage['blue'],
-                'b', linewidth=3)
 
     if 'redGreen' in ThirdStage:
 
