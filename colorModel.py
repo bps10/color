@@ -12,25 +12,28 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                LMSpercent={'l': 61, 'm': 32, 's': 7, },
+                ConeRatio={'fracLvM': 0.5, 's': 0.01, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, },
-                startLambda=390, endLambda=750, step=1):
+                startLambda=390,
+                endLambda=750,
+                step=1):
 
         if startLambda < 390 or endLambda > 750:
             raise IOError('lambdas must between 390 and 830')
-        if LMSpercent['l'] + LMSpercent['m'] + LMSpercent['s'] != 100:
-            raise IOError('LMSpercent must sum to 100!')
+        if ConeRatio['fracLvM'] > 1 or ConeRatio['fracLvM'] < 0:
+            raise IOError('Fraction of LvM must be between 0 and 1!')
 
         self.FirstStage = {}
         self.SecondStage = {}
         self.ThirdStage = {}
 
-        self.genFirstStage(maxSens, startLambda, endLambda, step)
-        self.genSecondStage(LMSpercent)
+        self.genFirstStage(maxSens, ConeRatio, startLambda, endLambda,
+                            step)
+        self.genSecondStage(ConeRatio)
         self.genThirdStage()
 
-    def genFirstStage(self, maxSens, startLambda, endLambda, step,
-                Out='anti-log'):
+    def genFirstStage(self, maxSens, ConeRatio, startLambda, endLambda,
+                        step, Out='anti-log'):
         """Compute the first stage in the model
         """
 
@@ -58,23 +61,23 @@ class colorModel():
             'S_cones': S_cones,
             }
 
-    def genSecondStage(self, LMSpercent):
+    def genSecondStage(self, ConeRatio):
 
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
         S_cones = self.FirstStage['S_cones']
 
         smVl = self.optimizeChannel(cones={'S': S_cones, '1': M_cones,
-                             '2': L_cones, }, sConst=0.05)
+                             '2': L_cones, }, ConeRatio=ConeRatio)
 
         slVm = self.optimizeChannel(cones={'S': S_cones, '1': L_cones,
-                             '2': M_cones, }, sConst=0.05)
+                             '2': M_cones, }, ConeRatio=ConeRatio)
 
         mVl = self.optimizeChannel(cones={'1': M_cones, '2': L_cones, },
-                                    sConst=0.05)
+                                    ConeRatio=ConeRatio)
 
         lVm = self.optimizeChannel(cones={'1': L_cones, '2': M_cones, },
-                                    sConst=0.05)
+                                    ConeRatio=ConeRatio)
 
         self.SecondStage = {
             'lambdas': self.FirstStage['lambdas'],
@@ -95,26 +98,30 @@ class colorModel():
             'blueYellow': blueYellow,
             }
 
-    def optimizeChannel(self, cones, sConst):
+    def optimizeChannel(self, cones, ConeRatio):
+
+        sRatio = ConeRatio['s']
+        #lRatio = (1 - sRatio) * ConeRatio['fracLvM']
+        #mRatio = (1 - sRatio) * (1 - ConeRatio['fracLvM'])
 
         lensMacula = self.getStockmanFilter()
 
         if 'S' in cones:
-            fun = lambda q1, Cone1, Cone2, Scone: (q1 * (sConst * Scone +
-                    (1 - sConst) * Cone1) - (1 - q1) *
+            fun = lambda w, Cone1, Cone2, Scone: (w * (sRatio * Scone +
+                    (1 - sRatio) * Cone1) - (1 - w) *
                     Cone2) / lensMacula
             # error function to minimize
-            err = lambda q1, Cone1, Cone2, Scone: (fun(q1, Cone1, Cone2,
+            err = lambda w, Cone1, Cone2, Scone: (fun(w, Cone1, Cone2,
                                                 Scone)).sum()
 
             con = fsolve(err, 10, args=(cones['1'], cones['2'], cones['S']))
             out = fun(con, cones['1'], cones['2'], cones['S'])
 
         else:
-            fun = lambda q1, Cone1, Cone2: (q1 * Cone1 - (1 - q1) *
+            fun = lambda w, Cone1, Cone2: (w * Cone1 - (1 - w) *
                     Cone2) / lensMacula
             # error function to minimize
-            err = lambda q1, Cone1, Cone2: (fun(q1, Cone1, Cone2)).sum()
+            err = lambda w, Cone1, Cone2: (fun(w, Cone1, Cone2)).sum()
 
             con = fsolve(err, -10, args=(cones['1'], cones['2']))
             out = fun(con, cones['1'], cones['2'])
@@ -128,23 +135,53 @@ class colorModel():
 
         return 10 ** lens[:361, 1] + 10 ** macula[:361, 1]
 
+    def rectify(self, plot=True):
+
+        self.red = self.ThirdStage['redGreen']
+        self.green = -1. * self.ThirdStage['redGreen']
+        self.blue = self.ThirdStage['blueYellow']
+        self.yellow = -1. * self.ThirdStage['blueYellow']
+
+        self.red[self.red < 0] = 0
+        self.green[self.green < 0] = 0
+        self.blue[self.blue < 0] = 0
+        self.yellow[self.yellow < 0] = 0
+
+        if plot:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            pf.AxisFormat()
+            pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+            ax.plot(self.ThirdStage['lambdas'], self.red, 'r', linewidth=3)
+            ax.plot(self.ThirdStage['lambdas'], self.green, 'g', linewidth=3)
+            ax.plot(self.ThirdStage['lambdas'], self.blue, 'b', linewidth=3)
+            ax.plot(self.ThirdStage['lambdas'], self.yellow, 'y', linewidth=3)
+            ax.set_xlabel('wavelength (nm)')
+            ax.set_xlim([self.FirstStage['wavelen']['startWave'],
+                         self.FirstStage['wavelen']['endWave']])
+            plt.tight_layout()
+            plt.show()
+
     def trainNeurons(self):
 
         ganglion = []
-        for i in range(0, 1000):
-            ganglion.append([self.SecondStage['SBG_ON'][i],
-                             #self.SecondStage['SBG_OFF'][i],
-                             self.SecondStage['mid_ON_Y'][i],
-                             #self.SecondStage['mid_ON_G'][i],
-                             self.SecondStage['mid_OFF_R'][i],
-                             #self.SecondStage['mid_OFF_B'][i]
-                             ])
-        width = 1
-        height = 1
-        color_som = SOM(width, height, 3, 0.05)
+
+        for i in range(0, len(self.ThirdStage['lambdas'])):
+            ganglion.append([self.red[i], self.green[i],
+                             self.blue[i], self.yellow[i]])
+
+        width = 10
+        height = 10
+        color_som = SOM(width, height, 4, 0.05)
         color_som.train(500, ganglion)
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pf.TufteAxis(ax, ['', ], [0, 0])
         plt.imshow(color_som.nodes, interpolation='nearest')
         plt.show()
+
         return color_som.nodes
 
     def returnFirstStage(self):
@@ -217,3 +254,4 @@ if __name__ == '__main__':
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
     plotModel(FirstStage, SecondStage, ThirdStage)
+    model.rectify()
