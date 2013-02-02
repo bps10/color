@@ -24,13 +24,17 @@ class colorModel():
         self.maxSens = maxSens
         self.ConeRatio = ConeRatio
 
+        self.genModel()
+
     def genModel(self):
 
         self.genFirstStage(self.maxSens)
 
-        collection = {}
-        for i in range(0, 1, 0.01):
-            temp = self.genSecondStage(ConeRatio={'fracLvM': i, 's': 0.05, },)
+        collection = {'smVl': {}, 'slVm': {}, 'lVm': {}, 'mVl': {}}
+        for i in range(0, 101, 1):
+            temp = self.genSecondStage(ConeRatio={'fracLvM': i / 100.0,
+                                                  's': 0.05, })
+
             collection['smVl'][i] = temp['smVl']
             collection['slVm'][i] = temp['slVm']
             collection['lVm'][i] = temp['lVm']
@@ -90,13 +94,14 @@ class colorModel():
                              'l': L_cones, }, xCone=M_cones,
                                  ConeRatio=ConeRatio)
 
-        self.SecondStage = {
+        SecondStage = {
             'lambdas': self.FirstStage['lambdas'],
             'smVl': smVl,
             'slVm': slVm,
             'lVm': lVm,
             'mVl': mVl,
             }
+        return SecondStage
 
     def genThirdStage(self):
         """Compute the third stage in the model
