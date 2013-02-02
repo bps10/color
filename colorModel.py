@@ -3,6 +3,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pylab as plt
+from math import factorial
 
 from spectsens import spectsens
 import PlottingFun as pf
@@ -14,9 +15,6 @@ class colorModel():
     def __init__(self,
                 ConeRatio={'fracLvM': 0.5, 's': 0.05, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
-
-        #if startLambda < 390 or endLambda > 750:
-        #    raise IOError('lambdas must between 390 and 830')
 
         if ConeRatio['fracLvM'] > 1 or ConeRatio['fracLvM'] < 0:
             raise IOError('Fraction of LvM must be between 0 and 1!')
@@ -39,8 +37,22 @@ class colorModel():
             collection['slVm'][i] = temp['slVm']
             collection['lVm'][i] = temp['lVm']
             collection['mVl'][i] = temp['mVl']
+        self.SecondStage = collection
 
         self.genThirdStage()
+
+        poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
+        mu = self.ConeRatio['fracLvM'] * 100
+        self.final = {'redGreen':
+                        np.zeros(len(self.ThirdStage['redGreen'][i])),
+                    'blueYellow':
+                        np.zeros(len(self.ThirdStage['blueYellow'][i]))}
+
+        for i in range(0, 101, 1):
+            self.final['redGreen'] += (self.ThirdStage['redGreen'][i] *
+                                        (poisson(mu, i) / 100.))
+            self.final['blueYellow'] += (self.ThirdStage['blueYellow'][i] *
+                                        (poisson(mu, i) / 100.))
 
     def genFirstStage(self, maxSens, startLambda=390,
                         endLambda=750, step=1, Out='anti-log'):
@@ -106,14 +118,16 @@ class colorModel():
     def genThirdStage(self):
         """Compute the third stage in the model
         """
-        redGreen = self.SecondStage['smVl'] - self.SecondStage['mVl']
-        blueYellow = self.SecondStage['slVm'] - self.SecondStage['lVm']
+        self.ThirdStage = {'redGreen': {}, 'blueYellow': {},
+                            'lambdas': self.FirstStage['lambdas']}
 
-        self.ThirdStage = {
-            'lambdas': self.FirstStage['lambdas'],
-            'redGreen': redGreen,
-            'blueYellow': blueYellow,
-            }
+        for i in range(0, len(self.SecondStage['smVl'])):
+            redGreen = self.SecondStage['smVl'][i] - self.SecondStage['mVl'][i]
+            blueYellow = (self.SecondStage['slVm'][i] -
+                        self.SecondStage['lVm'][i])
+
+            self.ThirdStage['redGreen'][i] = redGreen
+            self.ThirdStage['blueYellow'][i] = blueYellow
 
     def optimizeChannel(self, cones, xCone, ConeRatio):
 
@@ -128,22 +142,12 @@ class colorModel():
                                             mRatio * cones['m'] +
                                             lRatio + cones['l']) -
                                         (1 - w) * xCone) / lensMacula
-
         # error function to minimize
         err = lambda w, cones, xCone: (fun(w, cones, xCone)).sum()
 
         con = fsolve(err, 1, args=(cones, xCone))
         out = fun(con, cones, xCone)
-        '''
-        else:
-            fun = lambda w, Cone1, Cone2: (w * Cone1 - (1 - w) *
-                    Cone2) / lensMacula
-            # error function to minimize
-            err = lambda w, Cone1, Cone2: (fun(w, Cone1, Cone2)).sum()
 
-            con = fsolve(err, -10, args=(cones['1'], cones['2']))
-            out = fun(con, cones['1'], cones['2'])
-        '''
         return out
 
     def getStockmanFilter(self):
@@ -155,10 +159,10 @@ class colorModel():
 
     def rectify(self, plot=True):
 
-        self.red = self.ThirdStage['redGreen']
-        self.green = -1. * self.ThirdStage['redGreen']
-        self.blue = self.ThirdStage['blueYellow']
-        self.yellow = -1. * self.ThirdStage['blueYellow']
+        self.red = self.final['redGreen']
+        self.green = -1. * self.final['redGreen']
+        self.blue = self.final['blueYellow']
+        self.yellow = -1. * self.final['blueYellow']
 
         self.red[self.red < 0] = 0
         self.green[self.green < 0] = 0
@@ -211,13 +215,16 @@ class colorModel():
     def returnThirdStage(self):
         return self.ThirdStage
 
+    def returnFinal(self):
+        return self.final
+
 
 def plotModel(FirstStage, SecondStage, ThirdStage):
     """Plot cone spectral sensitivies and first stage predictions.
     """
 
-    fig = plt.figure(figsize=(8, 12))
-    ax1 = fig.add_subplot(311)
+    fig = plt.figure(figsize=(8, 8))
+    ax1 = fig.add_subplot(211)
     pf.AxisFormat()
     pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
 
@@ -236,24 +243,24 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
 
         ax2 = fig.add_subplot(312)
         pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
-        ax2.plot(SecondStage['lambdas'], SecondStage['smVl'],
+        ax2.plot(FirstStage['lambdas'], SecondStage['smVl'],
                 'b', linewidth=3)
-        ax2.plot(SecondStage['lambdas'], SecondStage['slVm'],
+        ax2.plot(FirstStage['lambdas'], SecondStage['slVm'],
                 'r', linewidth=3)
-        ax2.plot(SecondStage['lambdas'], SecondStage['mVl'],
+        ax2.plot(FirstStage['lambdas'], SecondStage['mVl'],
                 'orange', linewidth=3)
-        ax2.plot(SecondStage['lambdas'], SecondStage['lVm'],
+        ax2.plot(FirstStage['lambdas'], SecondStage['lVm'],
                 'g', linewidth=3)
         ax2.set_xlim([FirstStage['wavelen']['startWave'],
                       FirstStage['wavelen']['endWave']])
 
     if 'redGreen' in ThirdStage:
 
-        ax3 = fig.add_subplot(313)
+        ax3 = fig.add_subplot(212)
         pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
-        ax3.plot(ThirdStage['lambdas'], ThirdStage['redGreen'],
+        ax3.plot(FirstStage['lambdas'], ThirdStage['redGreen'],
                 'b', linewidth=3)
-        ax3.plot(ThirdStage['lambdas'], ThirdStage['blueYellow'],
+        ax3.plot(FirstStage['lambdas'], ThirdStage['blueYellow'],
                 'r', linewidth=3)
 
     ax3.set_xlim([FirstStage['wavelen']['startWave'],
@@ -271,5 +278,6 @@ if __name__ == '__main__':
     FirstStage = model.returnFirstStage()
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
-    plotModel(FirstStage, SecondStage, ThirdStage)
+    final = model.returnFinal()
+    plotModel(FirstStage, [], final)
     model.rectify()
