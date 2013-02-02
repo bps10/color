@@ -12,28 +12,34 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.05, 's': 0.01, },
-                maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, },
-                startLambda=390,
-                endLambda=750,
-                step=1):
+                ConeRatio={'fracLvM': 0.5, 's': 0.05, },
+                maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
-        if startLambda < 390 or endLambda > 750:
-            raise IOError('lambdas must between 390 and 830')
+        #if startLambda < 390 or endLambda > 750:
+        #    raise IOError('lambdas must between 390 and 830')
+
         if ConeRatio['fracLvM'] > 1 or ConeRatio['fracLvM'] < 0:
             raise IOError('Fraction of LvM must be between 0 and 1!')
 
-        self.FirstStage = {}
-        self.SecondStage = {}
-        self.ThirdStage = {}
+        self.maxSens = maxSens
+        self.ConeRatio = ConeRatio
 
-        self.genFirstStage(maxSens, ConeRatio, startLambda, endLambda,
-                            step)
-        self.genSecondStage(ConeRatio)
+    def genModel(self):
+
+        self.genFirstStage(self.maxSens)
+
+        collection = {}
+        for i in range(0, 1, 0.01):
+            temp = self.genSecondStage(ConeRatio={'fracLvM': i, 's': 0.05, },)
+            collection['smVl'][i] = temp['smVl']
+            collection['slVm'][i] = temp['slVm']
+            collection['lVm'][i] = temp['lVm']
+            collection['mVl'][i] = temp['mVl']
+
         self.genThirdStage()
 
-    def genFirstStage(self, maxSens, ConeRatio, startLambda, endLambda,
-                        step, Out='anti-log'):
+    def genFirstStage(self, maxSens, startLambda=390,
+                        endLambda=750, step=1, Out='anti-log'):
         """Compute the first stage in the model
         """
 
@@ -62,7 +68,8 @@ class colorModel():
             }
 
     def genSecondStage(self, ConeRatio):
-
+        """Compute the second stage in the model
+        """
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
         S_cones = self.FirstStage['S_cones']
@@ -92,7 +99,8 @@ class colorModel():
             }
 
     def genThirdStage(self):
-
+        """Compute the third stage in the model
+        """
         redGreen = self.SecondStage['smVl'] - self.SecondStage['mVl']
         blueYellow = self.SecondStage['slVm'] - self.SecondStage['lVm']
 
