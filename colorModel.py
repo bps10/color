@@ -13,63 +13,40 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.5, 's': 0.05, },
+                ConeRatio={'fracLvM': 0.50, 's': 0.05, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
         if ConeRatio['fracLvM'] > 1 or ConeRatio['fracLvM'] < 0:
             raise IOError('Fraction of LvM must be between 0 and 1!')
 
-        self.maxSens = maxSens
-        self.ConeRatio = ConeRatio
+        self.sRatio = ConeRatio['s']
+        self.lRatio = (1 - self.sRatio) * (ConeRatio['fracLvM'])
+        self.mRatio = (1 - self.sRatio) * (1 - self.lRatio)
 
-        self.genModel()
+        self.maxSens = maxSens
 
     def genModel(self):
 
-        self.genFirstStage(self.maxSens)
-
-        collection = {'smVl': {}, 'slVm': {}, 'lVm': {}, 'mVl': {}}
-        for i in range(0, 101, 1):
-            temp = self.genSecondStage(ConeRatio={'fracLvM': i / 100.0,
-                                                  's': 0.05, })
-
-            collection['smVl'][i] = temp['smVl']
-            collection['slVm'][i] = temp['slVm']
-            collection['lVm'][i] = temp['lVm']
-            collection['mVl'][i] = temp['mVl']
-        self.SecondStage = collection
-
+        self.genFirstStage()
+        self.genSecondStage()
         self.genThirdStage()
 
-        poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
-        mu = self.ConeRatio['fracLvM'] * 100
-        self.final = {'redGreen':
-                        np.zeros(len(self.ThirdStage['redGreen'][i])),
-                    'blueYellow':
-                        np.zeros(len(self.ThirdStage['blueYellow'][i]))}
-
-        for i in range(0, 101, 1):
-            self.final['redGreen'] += (self.ThirdStage['redGreen'][i] *
-                                        (poisson(mu, i) / 100.))
-            self.final['blueYellow'] += (self.ThirdStage['blueYellow'][i] *
-                                        (poisson(mu, i) / 100.))
-
-    def genFirstStage(self, maxSens, startLambda=390,
-                        endLambda=750, step=1, Out='anti-log'):
+    def genFirstStage(self, startLambda=390, endLambda=750, step=1,
+                        Out='anti-log'):
         """Compute the first stage in the model
         """
 
         lambdas = np.arange(startLambda, endLambda + step, step)
 
-        L_cones = spectsens(LambdaMax=maxSens['l'], Output=Out,
+        L_cones = spectsens(LambdaMax=self.maxSens['l'], Output=Out,
                             StartWavelength=startLambda,
                             OpticalDensity=0.35,
                             EndWavelength=endLambda, Res=step)[1]
-        M_cones = spectsens(LambdaMax=maxSens['m'], Output=Out,
+        M_cones = spectsens(LambdaMax=self.maxSens['m'], Output=Out,
                             StartWavelength=startLambda,
                             OpticalDensity=0.35,
                             EndWavelength=endLambda, Res=step)[1]
-        S_cones = spectsens(LambdaMax=maxSens['s'], Output=Out,
+        S_cones = spectsens(LambdaMax=self.maxSens['s'], Output=Out,
                             StartWavelength=startLambda,
                             OpticalDensity=0.35,
                             EndWavelength=endLambda, Res=step)[1]
@@ -83,70 +60,80 @@ class colorModel():
             'S_cones': S_cones,
             }
 
-    def genSecondStage(self, ConeRatio):
+    def genSecondStage(self):
         """Compute the second stage in the model
         """
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
-        S_cones = self.FirstStage['S_cones']
+        cones = {
+            's': self.FirstStage['S_cones'],
+            'm': self.FirstStage['M_cones'],
+            'l': self.FirstStage['L_cones'], }
 
-        smVl = self.optimizeChannel(cones={'s': S_cones, 'm': M_cones,
-                             'l': L_cones, }, xCone=L_cones,
-                                 ConeRatio=ConeRatio)
-
-        slVm = self.optimizeChannel(cones={'s': S_cones, 'm': M_cones,
-                             'l': L_cones, }, xCone=M_cones,
-                                 ConeRatio=ConeRatio)
-
-        mVl = self.optimizeChannel(cones={'s': 0, 'm': M_cones,
-                             'l': L_cones, }, xCone=L_cones,
-                                 ConeRatio=ConeRatio)
-
-        lVm = self.optimizeChannel(cones={'s': 0, 'm': M_cones,
-                             'l': L_cones, }, xCone=M_cones,
-                                 ConeRatio=ConeRatio)
-
-        SecondStage = {
-            'lambdas': self.FirstStage['lambdas'],
-            'smVl': smVl,
-            'slVm': slVm,
-            'lVm': lVm,
-            'mVl': mVl,
-            }
-        return SecondStage
+        self.SecondStage = {'lmsV_L': {}, 'lmsV_M': {}, 'ratio': {}, }
+        i = 0
+        for s in range(0, 101, 10):
+            for m in range(0, 101, 10):
+                for l in range(0, 101, 10):
+                    if (l + m + s) == 100:
+                        ratio = {'s': s, 'm': m, 'l': l, }
+                        lmsV_L = self.optimizeChannel(cones, ratio,
+                                                        Vcone=L_cones)
+                        lmsV_M = self.optimizeChannel(cones, ratio,
+                                                        Vcone=M_cones)
+                        self.SecondStage['lmsV_L'][i] = lmsV_L
+                        self.SecondStage['lmsV_M'][i] = lmsV_M
+                        self.SecondStage['ratio'][i] = ratio
+                        i += 1
 
     def genThirdStage(self):
         """Compute the third stage in the model
         """
-        self.ThirdStage = {'redGreen': {}, 'blueYellow': {},
-                            'lambdas': self.FirstStage['lambdas']}
+        self.ThirdStage = {'redGreen': {}, 'blueYellow': {}, }
 
-        for i in range(0, len(self.SecondStage['smVl'])):
-            redGreen = self.SecondStage['smVl'][i] - self.SecondStage['mVl'][i]
-            blueYellow = (self.SecondStage['slVm'][i] -
-                        self.SecondStage['lVm'][i])
+        gauss = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
+        gaussS, gaussM, gaussL = [], [], []
+        for i in range(0, 101, 10):
+            gaussS.append(gauss(self.sRatio, i))
+            gaussM.append(gauss(self.mRatio, i))
+            gaussL.append(gauss(self.lRatio, i))
+        gaussS = gaussS / sum(gaussS)
+        gaussM = gaussM / sum(gaussM)
+        gaussL = gaussL / sum(gaussL)
 
-            self.ThirdStage['redGreen'][i] = redGreen
-            self.ThirdStage['blueYellow'][i] = blueYellow
+        lCenterProb = (self.mRatio + self.lRatio) / self.lRatio
+        self.ThirdStage = {
+            'redGreen': np.zeros(len(self.SecondStage['lmsV_L'][0])),
+            'blueYellow': np.zeros(len(self.SecondStage['lmsV_L'][0])),
+            }
+        for i in self.SecondStage['lmsV_L']:
+            lRat = self.SecondStage['ratio'][i]['l'] / 100.
+            mRat = self.SecondStage['ratio'][i]['m'] / 100.
+            sRat = self.SecondStage['ratio'][i]['s'] / 100.
 
-    def optimizeChannel(self, cones, xCone, ConeRatio):
+            prob = (sRat * gaussS[sRat] *
+                    mRat * gaussM[mRat] *
+                    lRat * gaussL[lRat])
 
-        sRatio = ConeRatio['s']
-        lRatio = (1 - sRatio) * ConeRatio['fracLvM']
-        mRatio = (1 - sRatio) * (1 - ConeRatio['fracLvM'])
+            BY = self.SecondStage['lmsV_L'][i]
+            RG = self.SecondStage['lmsV_M'][i]
+
+            self.ThirdStage['redGreen'] += RG * prob * lCenterProb
+            self.ThirdStage['blueYellow'] += BY * prob * (1 - lCenterProb)
+
+    def optimizeChannel(self, cones, ratio, Vcone):
 
         lensMacula = self.getStockmanFilter()
 
-        #if 'S' in cones:
-        fun = lambda w, cones, xCone: (w * (sRatio * cones['s'] +
-                                            mRatio * cones['m'] +
-                                            lRatio + cones['l']) -
-                                        (1 - w) * xCone) / lensMacula
+        fun = lambda w, Vcone: (w * (ratio['s'] * cones['s'] +
+                                            ratio['m'] * cones['m'] +
+                                            ratio['l'] + cones['l']) -
+                                         Vcone) / lensMacula
         # error function to minimize
-        err = lambda w, cones, xCone: (fun(w, cones, xCone)).sum()
+        err = lambda w, Vcone: (fun(w, Vcone)).sum()
 
-        con = fsolve(err, 1, args=(cones, xCone))
-        out = fun(con, cones, xCone)
+        con = fsolve(err, 1, args=(Vcone))
+        out = fun(con, Vcone)
 
         return out
 
@@ -259,9 +246,9 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
         ax3 = fig.add_subplot(212)
         pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
         ax3.plot(FirstStage['lambdas'], ThirdStage['redGreen'],
-                'b', linewidth=3)
-        ax3.plot(FirstStage['lambdas'], ThirdStage['blueYellow'],
                 'r', linewidth=3)
+        ax3.plot(FirstStage['lambdas'], ThirdStage['blueYellow'],
+                'b', linewidth=3)
 
     ax3.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
@@ -275,9 +262,9 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
 if __name__ == '__main__':
 
     model = colorModel()
+    model.genModel()
     FirstStage = model.returnFirstStage()
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
-    final = model.returnFinal()
-    plotModel(FirstStage, [], final)
-    model.rectify()
+    plotModel(FirstStage, [], ThirdStage)
+    #model.rectify()
