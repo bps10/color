@@ -226,21 +226,6 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
                   FirstStage['wavelen']['endWave']])
     #ax1.set_ylabel('sensitivity')
 
-    if 'smVl' in SecondStage:
-
-        ax2 = fig.add_subplot(312)
-        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
-        ax2.plot(FirstStage['lambdas'], SecondStage['smVl'],
-                'b', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], SecondStage['slVm'],
-                'r', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], SecondStage['mVl'],
-                'orange', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], SecondStage['lVm'],
-                'g', linewidth=3)
-        ax2.set_xlim([FirstStage['wavelen']['startWave'],
-                      FirstStage['wavelen']['endWave']])
-
     if 'redGreen' in ThirdStage:
 
         ax3 = fig.add_subplot(212)
@@ -258,6 +243,26 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
     plt.tight_layout()
     plt.show()
 
+    if 'lmsV_L' in SecondStage:
+        fig = plt.figure(figsize=(8, 8))
+        ax1 = fig.add_subplot(211)
+        ax2 = fig.add_subplot(212)
+        pf.AxisFormat()
+        pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
+        pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
+
+        for i in SecondStage['lmsV_L']:
+            ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                    'b', linewidth=1)
+            ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                    'r', linewidth=1)
+
+        ax1.set_xlim([FirstStage['wavelen']['startWave'],
+                      FirstStage['wavelen']['endWave']])
+        ax2.set_xlim([FirstStage['wavelen']['startWave'],
+                      FirstStage['wavelen']['endWave']])
+        plt.tight_layout()
+        plt.show()
 
 if __name__ == '__main__':
 
@@ -266,5 +271,5 @@ if __name__ == '__main__':
     FirstStage = model.returnFirstStage()
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
-    plotModel(FirstStage, [], ThirdStage)
+    plotModel(FirstStage, SecondStage, ThirdStage)
     #model.rectify()
