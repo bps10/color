@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pylab as plt
-#from math import factorial
+from math import factorial
 
 from spectsens import spectsens
 import PlottingFun as pf
@@ -13,17 +13,28 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.90, 's': 0.05, },
+                ConeRatio={'fracLvM': 0.50, 's': 0.05, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
-        if ConeRatio['fracLvM'] > 1 or ConeRatio['fracLvM'] < 0:
+        self.test = True
+        self.step = 5
+        self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
+        self.maxSens = maxSens
+        self.getStockmanFilter()
+
+    def findConeRatios(self, fracLvM, fracS=None):
+        if fracS > 1 or fracLvM < 0:
             raise IOError('Fraction of LvM must be between 0 and 1!')
 
-        self.sRatio = ConeRatio['s']
-        self.lRatio = (1 - self.sRatio) * (ConeRatio['fracLvM'])
-        self.mRatio = (1 - self.sRatio) * (1 - self.lRatio)
+        if fracS is not None:
+            self.sRatio = fracS
+        self.lRatio = (1 - self.sRatio) * (fracLvM)
+        self.mRatio = (1 - self.sRatio) * (1 - fracLvM)
 
-        self.maxSens = maxSens
+        if self.test:
+            if round(self.sRatio + self.mRatio + self.lRatio, 7) != 1.0:
+                print 'lms ratios: ', self.sRatio, self.mRatio, self.lRatio
+                raise IOError('cone ratios must sum to 1.0!')
 
     def genModel(self):
 
@@ -31,11 +42,46 @@ class colorModel():
         self.genSecondStage()
         self.genThirdStage()
 
-    def uniqueHues(self):
-
+    def findUniqueHues(self):
+        lambdas = self.FirstStage['lambdas']
+        uniqueRed, uniqueGreen, uniqueBlue, uniqueYellow = [], [], [], []
+        LMratio = []
         if self.SecondStage:
-            for i in range(0, 101, 1):
-                self.genThirdStage(i / 100.)
+            for i in range(0, 101, self.step):
+
+                self.findConeRatios(fracLvM=(i / 100.))
+                self.genThirdStage()
+                temp = self.returnThirdStage()
+                RG = temp['redGreen']
+                BY = temp['blueYellow']
+
+                if i == 0:
+                    uniqueGreen.append(495)
+                    uniqueRed.append(600)
+                else:
+                    zero_cross = np.where(np.diff(np.sign(RG)))[0]
+                    uniqueGreen.append(lambdas[zero_cross[0]])
+                    uniqueRed.append(lambdas[np.argmin(RG)])
+
+                if i == 100:
+                    uniqueBlue.append(470)
+                    uniqueYellow.append(578)
+                else:
+
+                    zero_cross = np.where(np.diff(np.sign(BY)))[0]
+                    uniqueBlue.append(lambdas[zero_cross[0]])
+                    uniqueYellow.append(lambdas[np.argmin(BY)])
+                    #uniqueYellow.append(lambdas[zero_cross[1]])
+
+                LMratio.append(i)
+
+        self.uniqueHues = {
+            'red': uniqueRed,
+            'blue': uniqueBlue,
+            'green': uniqueGreen,
+            'yellow': uniqueYellow,
+            'LMratio': LMratio,
+            }
 
     def genFirstStage(self, startLambda=390, endLambda=750, step=1,
                         Out='anti-log'):
@@ -78,15 +124,15 @@ class colorModel():
 
         self.SecondStage = {'lmsV_L': {}, 'lmsV_M': {}, 'ratio': {}, }
         i = 0
-        for s in range(0, 101, 10):
-            for m in range(0, 101, 10):
-                for l in range(0, 101, 10):
+        for s in range(0, 101, self.step):
+            for m in range(0, 101, self.step):
+                for l in range(0, 101, self.step):
                     if (l + m + s) == 100:
                         ratio = {'s': s, 'm': m, 'l': l, }
                         lmsV_L = self.optimizeChannel(cones, ratio,
-                                                        Vcone=L_cones)
+                                                        Center=L_cones)
                         lmsV_M = self.optimizeChannel(cones, ratio,
-                                                        Vcone=M_cones)
+                                                        Center=M_cones)
                         self.SecondStage['lmsV_L'][i] = lmsV_L
                         self.SecondStage['lmsV_M'][i] = lmsV_M
                         self.SecondStage['ratio'][i] = ratio
@@ -98,52 +144,75 @@ class colorModel():
         self.ThirdStage = {'redGreen': {}, 'blueYellow': {}, }
 
         #poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
-        gauss = lambda mu, k: (np.exp(-1 * (k - mu) ** 2))
+        gauss = lambda mu, k: (np.exp(-1 * ((k - mu) ** 2) / 4 ** 2))
         gaussS, gaussM, gaussL = [], [], []
-        for i in range(0, 101, 10):
-            gaussS.append(gauss(self.sRatio, i / 100))
-            gaussM.append(gauss(self.mRatio, i / 100))
-            gaussL.append(gauss(self.lRatio, i / 100))
+        for i in range(0, 101, self.step):
+            gaussS.append(gauss(self.sRatio * 100., i))
+            gaussM.append(gauss(self.mRatio * 100., i))
+            gaussL.append(gauss(self.lRatio * 100., i))
         gaussS = gaussS / sum(gaussS)
         gaussM = gaussM / sum(gaussM)
         gaussL = gaussL / sum(gaussL)
+        '''
+        plt.figure()
+        plt.plot(range(0, 101, 1), gaussS)
+        plt.plot(range(0, 101, 1), gaussM)
+        plt.plot(range(0, 101, 1), gaussL)
+        plt.show()
+        '''
+        if self.test:
+            if self.mRatio != 0 and self.lRatio != 0:
+                if round(sum(gaussS) + sum(gaussM) + sum(gaussL), 5) != 3.0:
+                    print 'sum s: ', sum(gaussS)
+                    print 'sum m: ', sum(gaussM)
+                    print 'sum l: ', sum(gaussL)
+                    raise ValueError('gaussian prob distributions \
+                        must sum to 1')
 
-        if self.lRatio != 0:
-            lCenterProb = (self.mRatio + self.lRatio) / self.lRatio
-        else:
-            lCenterProb = 0
+        lCenterProb = self.lRatio / (self.mRatio + self.lRatio)
 
         self.ThirdStage = {
+            'mCenter': np.zeros(len(self.SecondStage['lmsV_L'][0])),
+            'lCenter': np.zeros(len(self.SecondStage['lmsV_M'][0])),
             'redGreen': np.zeros(len(self.SecondStage['lmsV_L'][0])),
-            'blueYellow': np.zeros(len(self.SecondStage['lmsV_L'][0])),
+            'blueYellow': np.zeros(len(self.SecondStage['lmsV_M'][0])),
             }
-
+        p = 0
         for i in self.SecondStage['lmsV_L']:
-            lRat = self.SecondStage['ratio'][i]['l'] / 10.
-            mRat = self.SecondStage['ratio'][i]['m'] / 10.
-            sRat = self.SecondStage['ratio'][i]['s'] / 10.
+            lRat = self.SecondStage['ratio'][i]['l'] / self.step
+            mRat = self.SecondStage['ratio'][i]['m'] / self.step
+            sRat = self.SecondStage['ratio'][i]['s'] / self.step
 
             prob = (gaussS[sRat] * gaussM[mRat] * gaussL[lRat])
+            p += prob
+            lCenter = self.SecondStage['lmsV_L'][i]
+            mCenter = self.SecondStage['lmsV_M'][i]
 
-            BY = self.SecondStage['lmsV_L'][i]
-            RG = self.SecondStage['lmsV_M'][i]
+            self.ThirdStage['mCenter'] += mCenter * prob * (1 - lCenterProb)
+            self.ThirdStage['lCenter'] += lCenter * prob * (lCenterProb)
 
-            self.ThirdStage['redGreen'] += RG * prob * lCenterProb
-            self.ThirdStage['blueYellow'] -= BY * prob * (1 - lCenterProb)
+        self.ThirdStage['blueYellow'] = (self.ThirdStage['mCenter'] -
+                                        self.ThirdStage['lCenter'])
+        self.ThirdStage['redGreen'] = (self.ThirdStage['mCenter'] +
+                                        self.ThirdStage['lCenter'])
+        print p
 
-    def optimizeChannel(self, cones, ratio, Vcone):
+    def optimizeChannel(self, cones, ratio, Center):
 
-        lensMacula = self.getStockmanFilter()
-
-        fun = lambda w, Vcone: (w * (ratio['s'] * cones['s'] +
-                                            ratio['m'] * cones['m'] +
-                                            ratio['l'] * cones['l']) -
-                                         Vcone) / lensMacula
+        fun = lambda w, Center: (w * (ratio['s'] * cones['s'] +
+                                    ratio['m'] * cones['m'] +
+                                    ratio['l'] * cones['l']) -
+                                 Center) / self.lensMacula
         # error function to minimize
-        err = lambda w, Vcone: (fun(w, Vcone)).sum()
+        err = lambda w, Center: (fun(w, Center)).sum()
+        w = fsolve(err, 1, args=(Center))
+        out = fun(w, Center)
 
-        con = fsolve(err, 1, args=(Vcone))
-        out = fun(con, Vcone)
+        if self.test:
+            temp = err(w, Center)
+            if temp > 1e-8:
+                print ratio
+                raise ValueError('error function not minimized properly')
 
         return out
 
@@ -152,7 +221,7 @@ class colorModel():
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10]
 
-        return 10 ** lens[:361, 1] + 10 ** macula[:361, 1]
+        self.lensMacula = 10 ** lens[:361, 1] + 10 ** macula[:361, 1]
 
     def rectify(self, plot=True):
 
@@ -212,16 +281,16 @@ class colorModel():
     def returnThirdStage(self):
         return self.ThirdStage
 
-    def returnFinal(self):
-        return self.final
+    def returnUniqueHues(self):
+        return self.uniqueHues
 
 
-def plotModel(FirstStage, SecondStage, ThirdStage):
+def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
     """Plot cone spectral sensitivies and first stage predictions.
     """
 
-    fig = plt.figure(figsize=(8, 8))
-    ax1 = fig.add_subplot(211)
+    fig = plt.figure(figsize=(8, 11))
+    ax1 = fig.add_subplot(311)
     pf.AxisFormat()
     pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
 
@@ -238,13 +307,22 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
 
     if 'redGreen' in ThirdStage:
 
-        ax3 = fig.add_subplot(212)
+        ax2 = fig.add_subplot(312)
+        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
+        ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'r', linewidth=3)
+        ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'b', linewidth=3)
+
+        ax3 = fig.add_subplot(313)
         pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
         ax3.plot(FirstStage['lambdas'], ThirdStage['redGreen'],
                 'r', linewidth=3)
         ax3.plot(FirstStage['lambdas'], ThirdStage['blueYellow'],
                 'b', linewidth=3)
 
+    ax2.set_xlim([FirstStage['wavelen']['startWave'],
+                     FirstStage['wavelen']['endWave']])
     ax3.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
     #ax3.set_ylabel('activity')
@@ -262,15 +340,37 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
         pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
 
         for i in SecondStage['lmsV_L']:
-            ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
-                    'b', linewidth=1)
-            ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
-                    'r', linewidth=1)
+            if i % 10 == 0:
+                ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                        'b', linewidth=1)
+                ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                        'r', linewidth=1)
 
         ax1.set_xlim([FirstStage['wavelen']['startWave'],
                       FirstStage['wavelen']['endWave']])
         ax2.set_xlim([FirstStage['wavelen']['startWave'],
                       FirstStage['wavelen']['endWave']])
+        plt.tight_layout()
+        plt.show()
+
+    if 'green' in UniqueHues:
+        fig = plt.figure(figsize=(8, 6))
+        ax1 = fig.add_subplot(111)
+        pf.AxisFormat()
+        pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[5, 5])
+
+        ax1.plot(UniqueHues['LMratio'], UniqueHues['red'],
+                'r', linewidth='3')
+        ax1.plot(UniqueHues['LMratio'], UniqueHues['green'],
+                'g', linewidth='3')
+        ax1.plot(UniqueHues['LMratio'], UniqueHues['blue'],
+                'b', linewidth='3')
+        ax1.plot(UniqueHues['LMratio'], UniqueHues['yellow'],
+                'y', linewidth='3')
+
+        ax1.set_ylabel('wavelength (um)')
+        ax1.set_xlabel('percent L vs M')
+
         plt.tight_layout()
         plt.show()
 
@@ -281,5 +381,7 @@ if __name__ == '__main__':
     FirstStage = model.returnFirstStage()
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
-    plotModel(FirstStage, SecondStage, ThirdStage)
+    model.findUniqueHues()
+    UniqueHues = model.returnUniqueHues()
+    plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues)
     #model.rectify()
