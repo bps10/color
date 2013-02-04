@@ -94,9 +94,9 @@ class colorModel():
         gauss = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
         gaussS, gaussM, gaussL = [], [], []
         for i in range(0, 101, 10):
-            gaussS.append(gauss(self.sRatio, i))
-            gaussM.append(gauss(self.mRatio, i))
-            gaussL.append(gauss(self.lRatio, i))
+            gaussS.append(gauss(self.sRatio * 100, i))
+            gaussM.append(gauss(self.mRatio * 100, i))
+            gaussL.append(gauss(self.lRatio * 100, i))
         gaussS = gaussS / sum(gaussS)
         gaussM = gaussM / sum(gaussM)
         gaussL = gaussL / sum(gaussL)
@@ -111,9 +111,9 @@ class colorModel():
             mRat = self.SecondStage['ratio'][i]['m'] / 100.
             sRat = self.SecondStage['ratio'][i]['s'] / 100.
 
-            prob = (sRat * gaussS[sRat] *
-                    mRat * gaussM[mRat] *
-                    lRat * gaussL[lRat])
+            prob = (sRat * gaussS[sRat * 10] *
+                    mRat * gaussM[mRat * 10] *
+                    lRat * gaussL[lRat * 10])
 
             BY = self.SecondStage['lmsV_L'][i]
             RG = self.SecondStage['lmsV_M'][i]
@@ -128,7 +128,7 @@ class colorModel():
         fun = lambda w, Vcone: (w * (ratio['s'] * cones['s'] +
                                             ratio['m'] * cones['m'] +
                                             ratio['l'] + cones['l']) -
-                                         Vcone) / lensMacula
+                                         (1 - w) * Vcone) / lensMacula
         # error function to minimize
         err = lambda w, Vcone: (fun(w, Vcone)).sum()
 
@@ -210,8 +210,8 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
     """Plot cone spectral sensitivies and first stage predictions.
     """
 
-    fig = plt.figure(figsize=(8, 8))
-    ax1 = fig.add_subplot(211)
+    fig = plt.figure(figsize=(12, 9))
+    ax1 = fig.add_subplot(221)
     pf.AxisFormat()
     pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
 
@@ -226,24 +226,25 @@ def plotModel(FirstStage, SecondStage, ThirdStage):
                   FirstStage['wavelen']['endWave']])
     #ax1.set_ylabel('sensitivity')
 
-    if 'smVl' in SecondStage:
+    if 'lmsV_L' in SecondStage:
 
-        ax2 = fig.add_subplot(312)
+        ax2 = fig.add_subplot(222)
+        ax4 = fig.add_subplot(224)
         pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
-        ax2.plot(FirstStage['lambdas'], SecondStage['smVl'],
-                'b', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], SecondStage['slVm'],
-                'r', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], SecondStage['mVl'],
-                'orange', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], SecondStage['lVm'],
-                'g', linewidth=3)
+        pf.TufteAxis(ax4, ['left', 'bottom'], Nticks=[5, 5])
+        for i in SecondStage['lmsV_L']:
+            ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                    'b', linewidth=1)
+            ax4.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                    'r', linewidth=1)
         ax2.set_xlim([FirstStage['wavelen']['startWave'],
+                      FirstStage['wavelen']['endWave']])
+        ax4.set_xlim([FirstStage['wavelen']['startWave'],
                       FirstStage['wavelen']['endWave']])
 
     if 'redGreen' in ThirdStage:
 
-        ax3 = fig.add_subplot(212)
+        ax3 = fig.add_subplot(223)
         pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
         ax3.plot(FirstStage['lambdas'], ThirdStage['redGreen'],
                 'r', linewidth=3)
@@ -266,5 +267,5 @@ if __name__ == '__main__':
     FirstStage = model.returnFirstStage()
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
-    plotModel(FirstStage, [], ThirdStage)
+    plotModel(FirstStage, SecondStage, ThirdStage)
     #model.rectify()
