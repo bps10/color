@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pylab as plt
-from math import factorial
+#from math import factorial
 
 from spectsens import spectsens
 import PlottingFun as pf
@@ -13,7 +13,7 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.50, 's': 0.05, },
+                ConeRatio={'fracLvM': 0.90, 's': 0.05, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
         if ConeRatio['fracLvM'] > 1 or ConeRatio['fracLvM'] < 0:
@@ -30,6 +30,12 @@ class colorModel():
         self.genFirstStage()
         self.genSecondStage()
         self.genThirdStage()
+
+    def uniqueHues(self):
+
+        if self.SecondStage:
+            for i in range(0, 101, 1):
+                self.genThirdStage(i / 100.)
 
     def genFirstStage(self, startLambda=390, endLambda=750, step=1,
                         Out='anti-log'):
@@ -91,35 +97,39 @@ class colorModel():
         """
         self.ThirdStage = {'redGreen': {}, 'blueYellow': {}, }
 
-        gauss = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
+        #poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
+        gauss = lambda mu, k: (np.exp(-1 * (k - mu) ** 2))
         gaussS, gaussM, gaussL = [], [], []
         for i in range(0, 101, 10):
-            gaussS.append(gauss(self.sRatio, i))
-            gaussM.append(gauss(self.mRatio, i))
-            gaussL.append(gauss(self.lRatio, i))
+            gaussS.append(gauss(self.sRatio, i / 100))
+            gaussM.append(gauss(self.mRatio, i / 100))
+            gaussL.append(gauss(self.lRatio, i / 100))
         gaussS = gaussS / sum(gaussS)
         gaussM = gaussM / sum(gaussM)
         gaussL = gaussL / sum(gaussL)
 
-        lCenterProb = (self.mRatio + self.lRatio) / self.lRatio
+        if self.lRatio != 0:
+            lCenterProb = (self.mRatio + self.lRatio) / self.lRatio
+        else:
+            lCenterProb = 0
+
         self.ThirdStage = {
             'redGreen': np.zeros(len(self.SecondStage['lmsV_L'][0])),
             'blueYellow': np.zeros(len(self.SecondStage['lmsV_L'][0])),
             }
-        for i in self.SecondStage['lmsV_L']:
-            lRat = self.SecondStage['ratio'][i]['l'] / 100.
-            mRat = self.SecondStage['ratio'][i]['m'] / 100.
-            sRat = self.SecondStage['ratio'][i]['s'] / 100.
 
-            prob = (sRat * gaussS[sRat] *
-                    mRat * gaussM[mRat] *
-                    lRat * gaussL[lRat])
+        for i in self.SecondStage['lmsV_L']:
+            lRat = self.SecondStage['ratio'][i]['l'] / 10.
+            mRat = self.SecondStage['ratio'][i]['m'] / 10.
+            sRat = self.SecondStage['ratio'][i]['s'] / 10.
+
+            prob = (gaussS[sRat] * gaussM[mRat] * gaussL[lRat])
 
             BY = self.SecondStage['lmsV_L'][i]
             RG = self.SecondStage['lmsV_M'][i]
 
             self.ThirdStage['redGreen'] += RG * prob * lCenterProb
-            self.ThirdStage['blueYellow'] += BY * prob * (1 - lCenterProb)
+            self.ThirdStage['blueYellow'] -= BY * prob * (1 - lCenterProb)
 
     def optimizeChannel(self, cones, ratio, Vcone):
 
@@ -127,7 +137,7 @@ class colorModel():
 
         fun = lambda w, Vcone: (w * (ratio['s'] * cones['s'] +
                                             ratio['m'] * cones['m'] +
-                                            ratio['l'] + cones['l']) -
+                                            ratio['l'] * cones['l']) -
                                          Vcone) / lensMacula
         # error function to minimize
         err = lambda w, Vcone: (fun(w, Vcone)).sum()
@@ -183,7 +193,7 @@ class colorModel():
         width = 10
         height = 10
         color_som = SOM(width, height, 4, 0.05)
-        color_som.train(500, ganglion)
+        color_som.train(1000, ganglion)
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
