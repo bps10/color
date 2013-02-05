@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pylab as plt
-#from math import factorial
+from math import factorial
 
 from spectsens import spectsens
 import PlottingFun as pf
@@ -13,7 +13,7 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.50, 's': 0.05, },
+                ConeRatio={'fracLvM': 0.80, 's': 0.05, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
         self.test = True
@@ -70,8 +70,8 @@ class colorModel():
                     uniqueBlue.append(420)
                     uniqueYellow.append(555)
                 else:
-
                     zero_cross = np.where(np.diff(np.sign(BY)))[0]
+                    #uniqueBlue.append(lambdas[np.argmin(BY)])
                     uniqueBlue.append(lambdas[zero_cross[0]])
                     uniqueYellow.append(lambdas[zero_cross[1]])
 
@@ -144,13 +144,14 @@ class colorModel():
         """Compute the third stage in the model
         """
 
-        #poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
-        gauss = lambda mu, k: (np.exp(-1 * ((k - mu) ** 2) / 4 ** 2))
-        gaussS, gaussM, gaussL = [], [], []
+        poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
+        gauss = lambda mu, k, SD: (np.exp(-1 * ((k - mu) ** 2) / (2 * SD) ** 2))
+        gaussS, gaussS1, gaussM, gaussL = [], [], [], []
         for i in range(0, 101, self.step):
-            gaussS.append(gauss(self.sRatio * 100., i))
-            gaussM.append(gauss(self.mRatio * 100., i))
-            gaussL.append(gauss(self.lRatio * 100., i))
+            gaussS1.append(gauss(0, i, 0.5))
+            gaussS.append(gauss(self.sRatio * 100., i, 0.5) + gaussS1[i])
+            gaussM.append(gauss(self.mRatio * 100., i, 1))
+            gaussL.append(gauss(self.lRatio * 100., i, 1))
 
         gaussS = gaussS / sum(gaussS)
         gaussM = gaussM / sum(gaussM)
@@ -193,10 +194,12 @@ class colorModel():
             self.ThirdStage['mCenter'] += mCenter * prob * (1 - lCenterProb)
             self.ThirdStage['lCenter'] += lCenter * prob * (lCenterProb)
 
+        '''
         self.ThirdStage['blueYellow'] = (self.ThirdStage['lCenter'] -
                                         self.ThirdStage['mCenter'])
         self.ThirdStage['redGreen'] = -1 * (self.ThirdStage['lCenter'] -
                                         self.ThirdStage['mCenter'])
+        '''
         #print p
 
     def optimizeChannel(self, cones, ratio, Center):
@@ -313,7 +316,7 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
     if 'redGreen' in ThirdStage:
 
         ax2 = fig.add_subplot(212)
-        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
+        pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
         ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
                 'r', linewidth=3)
         ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
@@ -372,13 +375,13 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
         pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[5, 5])
 
         ax1.plot(UniqueHues['LMratio'], UniqueHues['red'],
-                'r', linewidth='3')
+                'r', linewidth=3)
         ax1.plot(UniqueHues['LMratio'], UniqueHues['green'],
-                'g', linewidth='3')
+                'g', linewidth=3)
         ax1.plot(UniqueHues['LMratio'], UniqueHues['blue'],
-                'b', linewidth='3')
+                'b', linewidth=3)
         ax1.plot(UniqueHues['LMratio'], UniqueHues['yellow'],
-                'y', linewidth='3')
+                'y', linewidth=3)
 
         ax1.set_ylabel('wavelength (um)')
         ax1.set_xlabel('percent L vs M')
