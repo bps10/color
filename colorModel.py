@@ -3,7 +3,7 @@ from __future__ import division
 import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pylab as plt
-from math import factorial
+#from math import factorial
 
 from spectsens import spectsens
 import PlottingFun as pf
@@ -17,7 +17,7 @@ class colorModel():
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
         self.test = True
-        self.step = 5
+        self.step = 1
         self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
         self.maxSens = maxSens
         self.getStockmanFilter()
@@ -46,32 +46,34 @@ class colorModel():
         lambdas = self.FirstStage['lambdas']
         uniqueRed, uniqueGreen, uniqueBlue, uniqueYellow = [], [], [], []
         LMratio = []
-        if self.SecondStage:
+        if not self.SecondStage:
+            self.genSecondStage()
+        else:
+
             for i in range(0, 101, self.step):
 
                 self.findConeRatios(fracLvM=(i / 100.))
                 self.genThirdStage()
                 temp = self.returnThirdStage()
-                RG = temp['redGreen']
-                BY = temp['blueYellow']
+                RG = temp['lCenter']
+                BY = temp['mCenter']
 
                 if i == 0:
-                    uniqueGreen.append(495)
-                    uniqueRed.append(600)
+                    uniqueGreen.append(555)
+                    uniqueRed.append(595)
                 else:
                     zero_cross = np.where(np.diff(np.sign(RG)))[0]
                     uniqueGreen.append(lambdas[zero_cross[0]])
                     uniqueRed.append(lambdas[np.argmin(RG)])
 
                 if i == 100:
-                    uniqueBlue.append(470)
-                    uniqueYellow.append(578)
+                    uniqueBlue.append(420)
+                    uniqueYellow.append(555)
                 else:
 
                     zero_cross = np.where(np.diff(np.sign(BY)))[0]
                     uniqueBlue.append(lambdas[zero_cross[0]])
-                    uniqueYellow.append(lambdas[np.argmin(BY)])
-                    #uniqueYellow.append(lambdas[zero_cross[1]])
+                    uniqueYellow.append(lambdas[zero_cross[1]])
 
                 LMratio.append(i)
 
@@ -141,7 +143,6 @@ class colorModel():
     def genThirdStage(self):
         """Compute the third stage in the model
         """
-        self.ThirdStage = {'redGreen': {}, 'blueYellow': {}, }
 
         #poisson = lambda mu, k: (np.exp(-mu) * mu ** k) / factorial(k)
         gauss = lambda mu, k: (np.exp(-1 * ((k - mu) ** 2) / 4 ** 2))
@@ -155,9 +156,9 @@ class colorModel():
         gaussL = gaussL / sum(gaussL)
         '''
         plt.figure()
-        plt.plot(range(0, 101, 1), gaussS)
-        plt.plot(range(0, 101, 1), gaussM)
-        plt.plot(range(0, 101, 1), gaussL)
+        plt.plot(range(0, 101, self.step), gaussS, 'b', linewidth=3)
+        plt.plot(range(0, 101, self.step), gaussM, 'g', linewidth=3)
+        plt.plot(range(0, 101, self.step), gaussL, 'r', linewidth=3)
         plt.show()
         '''
         if self.test:
@@ -170,7 +171,7 @@ class colorModel():
                         must sum to 1')
 
         lCenterProb = self.lRatio / (self.mRatio + self.lRatio)
-
+        print lCenterProb
         self.ThirdStage = {
             'mCenter': np.zeros(len(self.SecondStage['lmsV_L'][0])),
             'lCenter': np.zeros(len(self.SecondStage['lmsV_M'][0])),
@@ -191,11 +192,11 @@ class colorModel():
             self.ThirdStage['mCenter'] += mCenter * prob * (1 - lCenterProb)
             self.ThirdStage['lCenter'] += lCenter * prob * (lCenterProb)
 
-        self.ThirdStage['blueYellow'] = (self.ThirdStage['mCenter'] -
-                                        self.ThirdStage['lCenter'])
-        self.ThirdStage['redGreen'] = (self.ThirdStage['mCenter'] +
-                                        self.ThirdStage['lCenter'])
-        print p
+        self.ThirdStage['blueYellow'] = (self.ThirdStage['lCenter'] -
+                                        self.ThirdStage['mCenter'])
+        self.ThirdStage['redGreen'] = -1 * (self.ThirdStage['lCenter'] -
+                                        self.ThirdStage['mCenter'])
+        #print p
 
     def optimizeChannel(self, cones, ratio, Center):
 
@@ -289,8 +290,8 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
     """Plot cone spectral sensitivies and first stage predictions.
     """
 
-    fig = plt.figure(figsize=(8, 11))
-    ax1 = fig.add_subplot(311)
+    fig = plt.figure(figsize=(8, 9))
+    ax1 = fig.add_subplot(211)
     pf.AxisFormat()
     pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
 
@@ -307,12 +308,17 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
 
     if 'redGreen' in ThirdStage:
 
-        ax2 = fig.add_subplot(312)
+        ax2 = fig.add_subplot(212)
         pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
         ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
                 'r', linewidth=3)
         ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
                 'b', linewidth=3)
+        """
+        ax2.plot(FirstStage['lambdas'], -1 * ThirdStage['lCenter'],
+                'g', linewidth=3)
+        ax2.plot(FirstStage['lambdas'], -1 * ThirdStage['mCenter'],
+                'y', linewidth=3)
 
         ax3 = fig.add_subplot(313)
         pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
@@ -320,13 +326,15 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
                 'r', linewidth=3)
         ax3.plot(FirstStage['lambdas'], ThirdStage['blueYellow'],
                 'b', linewidth=3)
-
+        """
     ax2.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
+    """
     ax3.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
+    """
     #ax3.set_ylabel('activity')
-    ax3.set_xlabel('wavelength (nm)')
+    ax2.set_xlabel('wavelength (nm)')
 
     plt.tight_layout()
     plt.show()
@@ -340,7 +348,7 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
         pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
 
         for i in SecondStage['lmsV_L']:
-            if i % 10 == 0:
+            if i % 20 == 0:
                 ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
                         'b', linewidth=1)
                 ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
@@ -381,6 +389,7 @@ if __name__ == '__main__':
     FirstStage = model.returnFirstStage()
     SecondStage = model.returnSecondStage()
     ThirdStage = model.returnThirdStage()
+
     model.findUniqueHues()
     UniqueHues = model.returnUniqueHues()
     plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues)
