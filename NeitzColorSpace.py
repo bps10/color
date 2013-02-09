@@ -36,15 +36,18 @@ class colorSpace():
         Mval = np.zeros((len(spectrum), 1))
         Sresponse = np.zeros((len(spectrum), 1))
         Sval = np.zeros((len(spectrum), 1))
-
+        Lc, Mc, Sc, filts = [], [], [], []
+        
         i = 0
         for light in spectrum:
-
-            #light = self.findLightMix(l, m, s)
-
-            Lresponse[i] = self.Lcone(light) / filters[i]
-            Mresponse[i] = self.Mcone(light) / filters[i]
-            Sresponse[i] = self.Scone(light) / filters[i]
+            Lc.append(self.Lcone(light))
+            Mc.append(self.Mcone(light))
+            Sc.append(self.Scone(light))
+            
+            Lresponse[i] = Lc[i] / filters[i]
+            Mresponse[i] = Mc[i] / filters[i]
+            Sresponse[i] = Sc[i] / filters[i]
+            
             if light == self.lights['l']:
                 self.lights['lFilt'] = i
             if light == self.lights['m']:
@@ -53,78 +56,88 @@ class colorSpace():
                 self.lights['sFilt'] = filters[i]
             i += 1
 
-        Lnorm = Lresponse / np.max(Lresponse)
-        Mnorm = Mresponse / np.max(Mresponse)
-        Snorm = Sresponse / np.max(Sresponse)
+        Lnorm = Lresponse / np.max(Lresponse) #* (spectrum ** -1.0)
+        Mnorm = Mresponse / np.max(Mresponse) #* (spectrum ** -1.0)
+        Snorm = Sresponse / np.max(Sresponse) #* (spectrum ** -1.0)
 
-        convMatrix = np.array([[Lnorm[self.lights['lFilt']][0],
-                                Lnorm[self.lights['mFilt']][0],
-                                Lnorm[self.lights['sFilt']][0]],
+        convMatrix = np.array([
+            [Lnorm[self.lights['lFilt']][0] / Lnorm[self.lights['sFilt']][0],
+            Lnorm[self.lights['mFilt']][0] / Lnorm[self.lights['sFilt']][0],
+            Lnorm[self.lights['sFilt']][0] / Lnorm[self.lights['sFilt']][0]],
 
-                                [Mnorm[self.lights['lFilt']][0],
-                                Mnorm[self.lights['mFilt']][0],
-                                Mnorm[self.lights['sFilt']][0]],
+            [Mnorm[self.lights['lFilt']][0] / Mnorm[self.lights['sFilt']][0],
+            Mnorm[self.lights['mFilt']][0] / Mnorm[self.lights['sFilt']][0],
+            Mnorm[self.lights['sFilt']][0] / Mnorm[self.lights['sFilt']][0]],
 
-                                [Snorm[self.lights['lFilt']][0],
-                                Snorm[self.lights['mFilt']][0],
-                                Snorm[self.lights['sFilt']][0]]])
+            [Snorm[self.lights['lFilt']][0] / Snorm[self.lights['sFilt']][0],
+            Snorm[self.lights['mFilt']][0] / Snorm[self.lights['sFilt']][0],
+            Snorm[self.lights['sFilt']][0] / Snorm[self.lights['sFilt']][0]]
+                               ])
+  
         print convMatrix
-        funcs = np.dot(convMatrix.T, np.array([Lnorm.T[0],
-                                            Mnorm.T[0],
-                                            Snorm.T[0]]))
+        CMFs = np.dot(np.linalg.inv(convMatrix),
+                       np.array([Lnorm.T[0] / Lnorm[self.lights['sFilt']][0],
+                                Mnorm.T[0] / Mnorm[self.lights['sFilt']][0],
+                                Snorm.T[0] / Snorm[self.lights['sFilt']][0]]))
+        #for i in range(3):
+        #        CMFs[i,:] /= spectrum ** -1.0
 
-        for i in range(len(Lnorm)):
-            Lval[i] = self.Xtri(Lnorm[i], Mnorm[i], Snorm[i])
-            Mval[i] = self.Ytri(Lnorm[i], Mnorm[i], Snorm[i])
-            Sval[i] = self.Ztri(Lnorm[i], Mnorm[i], Snorm[i])
+        #for i in range(len(CMFs[0,:])):
+        Ltri = self.Xtri(CMFs[0,:], CMFs[1,:], CMFs[2,:])
+        Mtri = self.Ytri(CMFs[0,:], CMFs[1,:], CMFs[2,:])
+        Stri = self.Ztri(CMFs[0,:], CMFs[1,:], CMFs[2,:])
 
-        Lc, Mc, Sc, filts = [], [], [], []
-        for light in spectrum:
-            Lc.append(self.Lcone(light))
-            Mc.append(self.Mcone(light))
-            Sc.append(self.Scone(light))
+        plotFilters, plotSpecSens = False, False
+        if plotFilters:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            pf.AxisFormat()
+            pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+            ax.semilogy(spectrum, filters, 'k', linewidth=2)
+            ax.set_ylabel('log density')
+            ax.set_xlabel('wavelength (nm)')
+            ax.set_xlim([380, 781])
+            ax.set_ylim([-10, max(filters)])
+            plt.tight_layout()
+            plt.show()
+
+        if plotSpecSens:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            pf.AxisFormat()
+            pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+            ax.plot(spectrum, Lnorm, 'r', linewidth=2)
+            ax.plot(spectrum, Lc, 'r--', linewidth=2)
+            ax.plot(spectrum, Mnorm, 'g', linewidth=2)
+            ax.plot(spectrum, Mc, 'g--', linewidth=2)
+            ax.plot(spectrum, Snorm, 'b', linewidth=2)
+            ax.plot(spectrum, Sc, 'b--', linewidth=2)
+
+            ax.set_ylim([-0.01, 1.01])
+            ax.set_xlim([380, 781])
+            ax.set_xlabel('wavelength (nm)')
+            ax.set_ylabel('sensitivity')
+            plt.tight_layout()
+            plt.show()
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
         pf.AxisFormat()
         pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-        ax.semilogy(spectrum, filters, 'k', linewidth=2)
-        ax.set_ylabel('log density')
+        ax.plot(spectrum, CMFs[0, :], 'r', linewidth=2)
+        ax.plot(spectrum, CMFs[1, :], 'g', linewidth=2)
+        ax.plot(spectrum, CMFs[2, :], 'b', linewidth=2)
+        #ax.set_ylim([-0.01, 2.25])
         ax.set_xlabel('wavelength (nm)')
-        ax.set_xlim([380, 781])
-        ax.set_ylim([-10, max(filters)])
+        ax.set_ylabel('sensitivity')
         plt.tight_layout()
         plt.show()
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
         pf.AxisFormat()
-        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-        ax.plot(spectrum, Lnorm, 'r', linewidth=2)
-        ax.plot(spectrum, Lc, 'r--', linewidth=2)
-        ax.plot(spectrum, Mnorm, 'g', linewidth=2)
-        ax.plot(spectrum, Mc, 'g--', linewidth=2)
-        ax.plot(spectrum, Snorm, 'b', linewidth=2)
-        ax.plot(spectrum, Sc, 'b--', linewidth=2)
-
-        ax.set_ylim([-0.01, 1.01])
-        ax.set_xlim([380, 781])
-        ax.set_ylabel('wavelength (nm)')
-        ax.set_xlabel('sensitivity')
-        plt.tight_layout()
-        plt.show()
-
-        plt.figure()
-        plt.plot(spectrum ** -1.0)
-        plt.show()
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        pf.AxisFormat()
-        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-        ax.plot(spectrum, funcs[0, :] * (spectrum ** -1.0), 'r')
-        ax.plot(spectrum, funcs[1, :] * (spectrum ** -1.0), 'g')
-        ax.plot(spectrum, funcs[2, :] * (spectrum ** -1.0), 'b')
+        pf.centerAxes(ax)
+        ax.plot(Ltri, Mtri, 'k', linewidth=3)
         #ax.set_ylim([-0.01, 2.25])
         plt.tight_layout()
         plt.show()
