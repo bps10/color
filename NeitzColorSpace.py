@@ -74,9 +74,9 @@ class colorSpace():
                                             Snorm.T[0]]))
 
         for i in range(len(Lnorm)):
-            Lval[i] = self.Ltri(Lnorm[i], Mnorm[i], Snorm[i])
-            Mval[i] = self.Mtri(Lnorm[i], Mnorm[i], Snorm[i])
-            Sval[i] = self.Stri(Lnorm[i], Mnorm[i], Snorm[i])
+            Lval[i] = self.Xtri(Lnorm[i], Mnorm[i], Snorm[i])
+            Mval[i] = self.Ytri(Lnorm[i], Mnorm[i], Snorm[i])
+            Sval[i] = self.Ztri(Lnorm[i], Mnorm[i], Snorm[i])
 
         Lc, Mc, Sc, filts = [], [], [], []
         for light in spectrum:
