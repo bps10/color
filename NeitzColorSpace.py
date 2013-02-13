@@ -15,11 +15,18 @@ class colorSpace():
         if stim.lower() == 'stockman':
             self.lights = {'l': 645.0, 'm': 526.0, 's': 444.0, }
 
-    def genLMS(self):
+    def genLMS(self, LMSpeaks=[559.0, 530.0, 417.0]):
 
-        self.Lcone = lambda x: spectsens(559.0, 0.35, 'anti-log', x, x, 1)[0]
-        self.Mcone = lambda x: spectsens(530.0, 0.35, 'anti-log', x, x, 1)[0]
-        self.Scone = lambda x: spectsens(417.0, 0.35, 'anti-log', x, x, 1)[0]
+        if len(LMSpeaks) != 3:
+            print 'LMSpeaks must be length 3! Using defaults: 559, 530, 417nm'
+            LMSpeaks = [559.0, 530.0, 417.0]
+        
+        self.Lcone = lambda x: spectsens(LMSpeaks[0], 0.35, 'anti-log',
+                                         x, x, 1)[0]
+        self.Mcone = lambda x: spectsens(LMSpeaks[1], 0.35, 'anti-log',
+                                         x, x, 1)[0]
+        self.Scone = lambda x: spectsens(LMSpeaks[2], 0.35, 'anti-log',
+                                         x, x, 1)[0]
 
     def genTrichromaticEquation(self):
 
@@ -27,7 +34,7 @@ class colorSpace():
         self.Y = lambda R, G, B: G / (R + G + B)
         self.Z = lambda R, G, B: B / (R + G + B)
 
-    def getStockmanFilter(self):
+    def genStockmanFilter(self):
 
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10, :]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10, :]
@@ -44,7 +51,7 @@ class colorSpace():
 
         self.genLMS()
         self.genTrichromaticEquation()
-        self.getStockmanFilter()
+        self.genStockmanFilter()
 
         Lresponse = np.zeros((len(self.spectrum), 1))
         Mresponse = np.zeros((len(self.spectrum), 1))
@@ -93,15 +100,26 @@ class colorSpace():
         
         self.CMFs = np.dot(np.linalg.inv(convMatrix), LMSsens)
         
-        self.CMFs[0, :] /= sum(self.CMFs[0, :])
-        self.CMFs[1, :] /= sum(self.CMFs[1, :])
-        self.CMFs[2, :] /= sum(self.CMFs[2, :])
+        self.CMFs[0, :] /= sum(self.CMFs[0, :]) / 100.
+        self.CMFs[1, :] /= sum(self.CMFs[1, :]) / 100.
+        self.CMFs[2, :] /= sum(self.CMFs[2, :]) / 100.
 
         self.xVal = self.X(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
         self.yVal = self.Y(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
         self.zVal = self.Z(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
-        
-    def plotColorSpace(self, plotFilters=False, plotSpecSens=False):
+
+    def findRGB(self, RGB=[1,1,1]):
+        tot = RGB / sum(RGB)
+        print sum(tot)
+    
+    def returnCMFs(self):
+        return {'cmfs': self.CMFs, 'wavelengths': self.spectrum, }
+    
+    def return_xyz(self):
+        return self.xVal, self.yVal, self.zVal
+                
+    def plotColorSpace(self, plotFilters=False, plotSpecSens=False, 
+                       plotCMFs=False):
         import matplotlib.pylab as plt
 
         if plotFilters:
@@ -136,24 +154,64 @@ class colorSpace():
             plt.tight_layout()
             plt.show()
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        pf.AxisFormat()
-        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-        ax.plot(self.spectrum, self.CMFs[0, :], 'r', linewidth=2)
-        ax.plot(self.spectrum, self.CMFs[1, :], 'g', linewidth=2)
-        ax.plot(self.spectrum, self.CMFs[2, :], 'b', linewidth=2)
-        ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
-        ax.set_xlabel('wavelength (nm)')
-        ax.set_ylabel('sensitivity')
-        plt.tight_layout()
-        plt.show()
+        if plotCMFs:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            pf.AxisFormat()
+            pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+            ax.plot(self.spectrum, self.CMFs[0, :], 'r', linewidth=2)
+            ax.plot(self.spectrum, self.CMFs[1, :], 'g', linewidth=2)
+            ax.plot(self.spectrum, self.CMFs[2, :], 'b', linewidth=2)
+            ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
+            ax.set_xlabel('wavelength (nm)')
+            ax.set_ylabel('sensitivity')
+            plt.tight_layout()
+            plt.show()
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        pf.AxisFormat(FONTSIZE=14)
+        pf.AxisFormat(FONTSIZE=10, TickSize=6)
         pf.centerAxes(ax)
+
+        # filter for positive y vals
+        # ind = self.yVal >= 0
         ax.plot(self.xVal, self.yVal, 'k', linewidth=3)
+
+        ax.plot(1.0/3.0, 1.0/3.0, 'ko', markersize=5)
+        ax.annotate(s='{}'.format('S'), xy=(1./3.,1./3.), xytext=(2,8),
+                    ha='right', textcoords='offset points', fontsize=14)
+                    
+        # annotate plot
+        dat = zip(self.spectrum[::10], self.xVal[::10], self.yVal[::10])
+        for text, X, Y in dat:
+            if text > 460 and text < 630:
+
+                if text <= 500: 
+                    ax.scatter(X-0.02, Y, marker='_', s=150, c='k')
+                elif text > 500 and text <= 510:
+                    ax.scatter(X, Y+0.02, marker='|', s=150, c='k')
+                else:
+                    ax.scatter(X+0.02, Y, marker='_', s=150, c='k')
+                   
+                if text <510:
+                    ax.annotate(s='{}'.format(int(text)),
+                                xy=(X, Y), 
+                                xytext=(-15, -5), 
+                                ha='right', 
+                                textcoords='offset points', fontsize=16)
+                elif text >= 510 and text < 520:
+                    ax.annotate(s='{}'.format(int(text)),
+                                xy=(X, Y), 
+                                xytext=(5, 20), 
+                                ha='right', 
+                                textcoords='offset points', fontsize=16)                    
+                else:
+                    ax.annotate(s='{}'.format(int(text)),
+                                xy=(X, Y), 
+                                xytext=(45, -5), 
+                                ha='right', 
+                                textcoords='offset points', fontsize=16)
+                    
         #ax.set_ylim([-0.01, 2.25])
         plt.tight_layout()
         plt.show()

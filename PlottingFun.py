@@ -63,6 +63,7 @@ def simpleaxis(ax):
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
 
+
 def centerAxes(ax):
     ax.spines['left'].set_position('zero')
     ax.spines['right'].set_color('none')
@@ -72,6 +73,7 @@ def centerAxes(ax):
     ax.spines['bottom'].set_smart_bounds(True)
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+
 
 def TufteAxis(ax, spines, Nticks = None, integer='on'):
     """
