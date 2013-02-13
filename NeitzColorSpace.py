@@ -8,8 +8,12 @@ import PlottingFun as pf
 
 class colorSpace():
 
-    def __init__(self):
-        self.lights = {'l': 650.0, 'm': 530.0, 's': 460.0, }
+    def __init__(self, stim='wright'):
+
+        if stim.lower() == 'wright':
+            self.lights = {'l': 650.0, 'm': 530.0, 's': 460.0, }
+        if stim.lower() == 'stockman':
+            self.lights = {'l': 645.0, 'm': 526.0, 's': 444.0, }
 
     def genLMS(self):
 
@@ -24,12 +28,18 @@ class colorSpace():
         self.Z = lambda R, G, B: B / (R + G + B)
 
     def getStockmanFilter(self):
-        
+
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10, :]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10, :]
         self.filters = 10.0 ** lens[:, 1] + 10.0 ** macula[:, 1]
-        self.spectrum = lens[:,0]
-    
+        self.spectrum = lens[:, 0]
+
+    def quanta2energy(self, quanta, lambdas):
+        h = 6.628e-34
+        c = 2.998e+08
+        energy = (quanta * h * c) / 1e-9 * lambdas
+        return energy
+        
     def genCMFs(self):
 
         self.genLMS()
@@ -37,41 +47,34 @@ class colorSpace():
         self.getStockmanFilter()
 
         Lresponse = np.zeros((len(self.spectrum), 1))
-        Lval = np.zeros((len(self.spectrum), 1))
-        
         Mresponse = np.zeros((len(self.spectrum), 1))
-        Mval = np.zeros((len(self.spectrum), 1))
-        
         Sresponse = np.zeros((len(self.spectrum), 1))
-        Sval = np.zeros((len(self.spectrum), 1))
-        
+
         self.Lc = np.zeros((len(self.spectrum), 1))
         self.Mc = np.zeros((len(self.spectrum), 1))
         self.Sc = np.zeros((len(self.spectrum), 1))
-        
-        i = 0
-        for light in self.spectrum:
-            
+
+        for i, light in enumerate(self.spectrum):
+
             self.Lc[i] = self.Lcone(light)
             self.Mc[i] = self.Mcone(light)
             self.Sc[i] = self.Scone(light)
-            
+
             Lresponse[i] = self.Lc[i] / self.filters[i] / (light ** -1.0)
             Mresponse[i] = self.Mc[i] / self.filters[i] / (light ** -1.0)
             Sresponse[i] = self.Sc[i] / self.filters[i] / (light ** -1.0)
-            
+
             if light == self.lights['l']:
                 self.lights['lInd'] = i
             if light == self.lights['m']:
                 self.lights['mInd'] = i
             if light == self.lights['s']:
                 self.lights['sInd'] = i
-        
-            i += 1
 
         self.Lnorm = Lresponse / np.max(Lresponse)
         self.Mnorm = Mresponse / np.max(Mresponse)
         self.Snorm = Sresponse / np.max(Sresponse)
+        LMSsens = np.array([self.Lnorm.T[0], self.Mnorm.T[0], self.Snorm.T[0]])
 
         convMatrix = np.array([
             [self.Lnorm[self.lights['lInd']][0],
@@ -85,20 +88,22 @@ class colorSpace():
             [self.Snorm[self.lights['lInd']][0],
             self.Snorm[self.lights['mInd']][0],
             self.Snorm[self.lights['sInd']][0]]])
-  
+
         print convMatrix
-        self.CMFs = np.dot(np.linalg.inv(convMatrix),
-                       np.array([self.Lnorm.T[0],
-                                self.Mnorm.T[0],
-                                self.Snorm.T[0]]))
+        
+        self.CMFs = np.dot(np.linalg.inv(convMatrix), LMSsens)
+        
+        self.CMFs[0, :] /= sum(self.CMFs[0, :])
+        self.CMFs[1, :] /= sum(self.CMFs[1, :])
+        self.CMFs[2, :] /= sum(self.CMFs[2, :])
 
-        self.xVal = self.X(self.CMFs[0,:], self.CMFs[1,:], self.CMFs[2,:])
-        self.yVal = self.Y(self.CMFs[0,:], self.CMFs[1,:], self.CMFs[2,:])
-        self.zVal = self.Z(self.CMFs[0,:], self.CMFs[1,:], self.CMFs[2,:])
-
+        self.xVal = self.X(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+        self.yVal = self.Y(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+        self.zVal = self.Z(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+        
     def plotColorSpace(self, plotFilters=False, plotSpecSens=False):
         import matplotlib.pylab as plt
-        
+
         if plotFilters:
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -108,7 +113,7 @@ class colorSpace():
             ax.set_ylabel('log density')
             ax.set_xlabel('wavelength (nm)')
             ax.set_xlim([380, 781])
-            ax.set_ylim([-10, max(filters)])
+            ax.set_ylim([-10, max(self.filters)])
             plt.tight_layout()
             plt.show()
 
@@ -138,7 +143,6 @@ class colorSpace():
         ax.plot(self.spectrum, self.CMFs[0, :], 'r', linewidth=2)
         ax.plot(self.spectrum, self.CMFs[1, :], 'g', linewidth=2)
         ax.plot(self.spectrum, self.CMFs[2, :], 'b', linewidth=2)
-
         ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
         ax.set_xlabel('wavelength (nm)')
         ax.set_ylabel('sensitivity')
@@ -147,15 +151,12 @@ class colorSpace():
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
-        pf.AxisFormat()
+        pf.AxisFormat(FONTSIZE=14)
         pf.centerAxes(ax)
         ax.plot(self.xVal, self.yVal, 'k', linewidth=3)
-
         #ax.set_ylim([-0.01, 2.25])
         plt.tight_layout()
         plt.show()
-
-
 
 
 if __name__ == '__main__':

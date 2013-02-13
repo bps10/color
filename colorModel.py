@@ -13,10 +13,10 @@ from sompy import SOM
 class colorModel():
 
     def __init__(self,
-                ConeRatio={'fracLvM': 0.75, 's': 0.05, },
+                ConeRatio={'fracLvM': 0.25, 's': 0.05, },
                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
 
-        self.test = True
+        self.test = False
         self.step = 1
         self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
         self.maxSens = maxSens
@@ -64,7 +64,7 @@ class colorModel():
                 else:
                     zero_cross = np.where(np.diff(np.sign(RG)))[0]
                     uniqueGreen.append(lambdas[zero_cross[0]])
-                    uniqueRed.append(lambdas[np.argmax(RG)])
+                    uniqueRed.append(lambdas[np.argmin(RG)])
 
                 if i == 100:
                     uniqueBlue.append(420)
@@ -167,12 +167,10 @@ class colorModel():
             plt.show()
 
         lCenterProb = self.lRatio / (self.mRatio + self.lRatio)
-
+        
         self.ThirdStage = {
             'mCenter': np.zeros(len(self.SecondStage['lmsV_L'][0])),
             'lCenter': np.zeros(len(self.SecondStage['lmsV_M'][0])),
-            'redGreen': np.zeros(len(self.SecondStage['lmsV_L'][0])),
-            'blueYellow': np.zeros(len(self.SecondStage['lmsV_M'][0])),
             }
         p = 0
         for i in self.SecondStage['lmsV_L']:
@@ -181,20 +179,21 @@ class colorModel():
             sNum = self.SecondStage['percent'][i]['s']
 
             probSur = (gauss(self.sRatio * 100, sNum / self.step, 2) *
-                            binom(lNum, lNum + mNum, self.lRatio))
-
+                        binom(mNum, lNum + mNum, self.mRatio)                         
+                            )
+ 
             p += probSur
             lCenter = self.SecondStage['lmsV_L'][i]
             mCenter = self.SecondStage['lmsV_M'][i]
 
-            self.ThirdStage['mCenter'] += mCenter * probSur * (1 - lCenterProb)
-            self.ThirdStage['lCenter'] += lCenter * probSur * (lCenterProb)
-
+            self.ThirdStage['mCenter'] += mCenter * (1 - lCenterProb) * probSur 
+            self.ThirdStage['lCenter'] += lCenter * (lCenterProb) * probSur 
+        '''
         self.ThirdStage['blueYellow'] = (-1 * self.ThirdStage['mCenter'] -
                                         -1 * self.ThirdStage['lCenter'])
         self.ThirdStage['redGreen'] = (self.ThirdStage['lCenter'] -
                                         self.ThirdStage['mCenter'])
-
+        '''
         print self.sRatio, lCenterProb, 'prob :', p
 
         if self.test:
@@ -227,7 +226,7 @@ class colorModel():
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10]
 
-        self.lensMacula = 10 ** (lens[:361, 1] + macula[:361, 1])
+        self.lensMacula = 10 ** lens[:361, 1] + 10 ** macula[:361, 1]
 
     def rectify(self, plot=True):
 
@@ -295,8 +294,16 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
     """Plot cone spectral sensitivies and first stage predictions.
     """
 
-    fig = plt.figure(figsize=(8.5, 11))
-    ax1 = fig.add_subplot(311)
+    if 'redGreen' in ThirdStage:
+        fig = plt.figure(figsize=(8.5, 11))
+        ax1 = fig.add_subplot(311)
+        ax2 = fig.add_subplot(312)
+        ax3 = fig.add_subplot(313)
+
+    else:
+        fig = plt.figure(figsize=(8.5, 8))
+        ax1 = fig.add_subplot(211)
+        ax2 = fig.add_subplot(212)        
 
     pf.AxisFormat()
     pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
@@ -314,31 +321,29 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
     ax1.yaxis.set_label_coords(-0.2, 0.5)
 
     if 'lCenter' in ThirdStage:
-
-        ax2 = fig.add_subplot(312)
-        ax3 = fig.add_subplot(313)
-        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 5])
-        pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
-
+        #pf.centerAxes(ax)        
+        pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
+        ax2.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
         ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
                 'r', linewidth=3)
         ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
                 'b', linewidth=3)
-
+        ax2.set_xlim([FirstStage['wavelen']['startWave'],
+                         FirstStage['wavelen']['endWave']])
+        ax2.set_ylabel('activity')
+        ax2.yaxis.set_label_coords(-0.2, 0.5)
+        
+    if 'redGreen' in ThirdStage:
+        
+        pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
         ax3.plot(FirstStage['lambdas'], -1 * ThirdStage['redGreen'],
                 'r', linewidth=3)
         ax3.plot(FirstStage['lambdas'], -1 * ThirdStage['blueYellow'],
                 'b', linewidth=3)
-
-    ax2.set_xlim([FirstStage['wavelen']['startWave'],
-                     FirstStage['wavelen']['endWave']])
-
-    ax3.set_xlim([FirstStage['wavelen']['startWave'],
-                     FirstStage['wavelen']['endWave']])
-
-    ax2.set_ylabel('activity')
-    ax2.yaxis.set_label_coords(-0.2, 0.5)
-    ax3.set_xlabel('wavelength (nm)')
+        ax3.set_xlim([FirstStage['wavelen']['startWave'],
+                         FirstStage['wavelen']['endWave']])
+        ax3.set_xlabel('wavelength (nm)')
 
     plt.tight_layout()
     plt.show()
@@ -348,9 +353,14 @@ def plotModel(FirstStage, SecondStage, ThirdStage, UniqueHues):
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
         pf.AxisFormat()
+
         pf.TufteAxis(ax1, ['left', ], Nticks=[5, 5])
         pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
 
+        ax1.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
+        ax2.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
         for i in SecondStage['lmsV_L']:
             if i % 50 == 0:
                 ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
