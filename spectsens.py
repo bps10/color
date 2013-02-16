@@ -74,8 +74,7 @@ def spectsens(LambdaMax=559, OpticalDensity=0.2, Output='log',
               (((10.0 ** (vector - A2)) - T) / U) ** 2.0))) / 10.0) +
               ((Y / X * (const * np.exp(1.0) ** (-0.5 *
               (((10.0 ** (vector - A2)) - W) / X) ** 2.0))) / 100.0))
-    ODTemp = np.log10((1.0 - 10.0 ** -((10.0 ** exTemp) *
-                        Z)) / (1.0 - 10 ** - Z))
+    ODTemp = 1.0 - 10.0 ** -((exTemp) * Z)
 
     if Output.lower() == 'log':
         extinction = exTemp

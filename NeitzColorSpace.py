@@ -17,43 +17,63 @@ class colorSpace(object):
         if stim.lower() == 'stockman':
             self.lights = {'l': 645.0, 'm': 526.0, 's': 444.0, }
 
-    def genLMS(self, LMSpeaks=[561.0, 534.0, 422.0], fund='compare'):
+    def genLMS(self, LMSpeaks=[559.0, 530.0, 422.0], fund='compare'):
 
         if len(LMSpeaks) != 3:
             print 'LMSpeaks must be length 3! Using defaults: 559, 530, 417nm'
             LMSpeaks = [559.0, 530.0, 421.0]
         
         if fund.lower() == 'stockman':
-            #foo = np.genfromtxt('stockman/fundamentals2deg.csv', delimiter=',')[::10, :]
-            foo = np.genfromtxt('stockman/specSens.csv', delimiter=',')[::10, :]
-            self.Lc = 10.0 ** foo[:, 1]
-            self.Mc = 10.0 ** foo[:, 2]
-            self.Sc = 10.0 ** foo[:, 3]
-    
-            Lresponse = self.Lc / self.filters * self.spectrum
-            Mresponse = self.Mc / self.filters * self.spectrum
-            Sresponse = self.Sc / self.filters * self.spectrum
+            fundamentals = False
+            if fundamentals is True:
+                foo = np.genfromtxt('stockman/fundamentals2deg.csv', 
+                                     delimiter=',')[::10, :]
+                self.Lc = 10.0 ** foo[:, 1]
+                self.Mc = 10.0 ** foo[:, 2]
+                self.Sc = 10.0 ** foo[:, 3]
+        
+                Lresponse = self.Lc * self.spectrum
+                Mresponse = self.Mc * self.spectrum
+                Sresponse = self.Sc * self.spectrum
+            
+            else:
+                foo = np.genfromtxt('stockman/specSens.csv', 
+                                    delimiter=',')[::10, :]
+                self.Lc = 10.0 ** foo[:, 1]
+                self.Mc = 10.0 ** foo[:, 2]
+                self.Sc = 10.0 ** foo[:, 3]
+        
+                Lresponse = self.Lc / self.filters# * self.spectrum
+                Mresponse = self.Mc / self.filters# * self.spectrum
+                Sresponse = self.Sc / self.filters# * self.spectrum
             
         if fund.lower() == 'neitz' or fund.lower() == 'compare':
             
-            self.Lc = spectsens(LMSpeaks[0], 0.6, 'anti-log',
+            self.Lc = spectsens(LMSpeaks[0], 0.5, 'log',
                                              min(self.spectrum), 
-                                             max(self.spectrum), 1)[0]
-            self.Mc = spectsens(LMSpeaks[1], 0.6, 'anti-log',
+                                             max(self.spectrum), 1)[1]
+            self.Mc = spectsens(LMSpeaks[1], 0.5, 'log',
                                              min(self.spectrum), 
-                                             max(self.spectrum), 1)[0]
-            self.Sc = spectsens(LMSpeaks[2], 0.4, 'anti-log',
+                                             max(self.spectrum), 1)[1]
+            self.Sc = spectsens(LMSpeaks[2], 0.4, 'log',
                                              min(self.spectrum), 
-                                             max(self.spectrum), 1)[0]
-                                             
+                                             max(self.spectrum), 1)[1]
+
+            self.Lc = 1. - 10.0 ** -((self.Lc) * 0.5)
+            self.Mc = 1. - 10.0 ** -((self.Mc) * 0.5)   
+            self.Sc = 1. - 10.0 ** -((self.Sc) * 0.4)                                 
+            self.Lc = 10.0 ** self.Lc
+            self.Mc = 10.0 ** self.Mc
+            self.Sc = 10.0 ** self.Sc                                           
             Lresponse = self.Lc / self.filters * self.spectrum
             Mresponse = self.Mc / self.filters * self.spectrum
             Sresponse = self.Sc / self.filters * self.spectrum
             
         if fund.lower() == 'compare':
-            comp = [False, True, True]
+            comp = [True, True, False]
             if comp[0] == True:
-                foo = np.genfromtxt('stockman/fundamentals2deg.csv', delimiter=',')[::10, :]
+                foo = np.genfromtxt('stockman/fundamentals2deg.csv',
+                                    delimiter=',')[::10, :]
                 
                 LN = 10.0 ** foo[:, 1]
                 MN = 10.0 ** foo[:, 2]
@@ -66,35 +86,46 @@ class colorSpace(object):
                 SN /= max(SN)
                 
             if comp[1] == True:
-                foo = np.genfromtxt('stockman/specSens.csv', delimiter=',')[::10, :]
-                LS = 10.0 ** foo[:, 1]
-                MS = 10.0 ** foo[:, 2]
-                SS = 10.0 ** foo[:, 3]  
-                LS /= self.filters * self.spectrum
-                MS /= self.filters * self.spectrum
-                SS /= self.filters * self.spectrum
-                LS /= sum(LS)
-                MS /= sum(MS)
-                SS /= sum(SS)
+                foo = np.genfromtxt('stockman/specSens.csv',
+                                    delimiter=',')[::10, :]
+
+                LS =  1. - 10.0 ** -((foo[:, 1]) * 0.5)
+                MS =  1. - 10.0 ** -((foo[:, 2]) * 0.5)
+                SS =  1. - 10.0 ** -((foo[:, 3]) * 0.4)
+                LS = 10.0**LS
+                MS = 10.0**MS
+                SS = 10.0**SS
+                LS /= self.filters 
+                MS /= self.filters
+                SS /= self.filters
+                LS /= max(LS)
+                MS /= max(MS)
+                SS /= max(SS)
 
                 
             if comp[2] == True:
-                LN = spectsens(LMSpeaks[0], 0.6, 'anti-log',
+                LN = spectsens(LMSpeaks[0], 0.5, 'log',
                                                  min(self.spectrum), 
-                                                 max(self.spectrum), 1)[0]
-                MN = spectsens(LMSpeaks[1], 0.6, 'anti-log',
+                                                 max(self.spectrum), 1)[1]
+                MN = spectsens(LMSpeaks[1], 0.5, 'log',
                                                  min(self.spectrum), 
-                                                 max(self.spectrum), 1)[0]
-                SN = spectsens(LMSpeaks[2], 0.4, 'anti-log',
+                                                 max(self.spectrum), 1)[1]
+                SN = spectsens(LMSpeaks[2], 0.4, 'log',
                                                  min(self.spectrum), 
-                                                 max(self.spectrum), 1)[0]
-                                                 
+                                                 max(self.spectrum), 1)[1]
+
+                LN = 1. - 10.0 ** -((LN) * 0.5)
+                MN = 1. - 10.0 ** -((MN) * 0.5)   
+                SN = 1. - 10.0 ** -((SN) * 0.4)                                 
+                LN = 10.0**LN
+                MN = 10.0**MN
+                SN = 10.0**SN
                 LN /= self.filters * self.spectrum
                 MN /= self.filters * self.spectrum
                 SN /= self.filters * self.spectrum
-                LN /= sum(LN)
-                MN /= sum(MN)
-                SN /= sum(SN)
+                LN /= max(LN)
+                MN /= max(MN)
+                SN /= max(SN)
     
             fig = plt.figure()
             ax = fig.add_subplot(111)
@@ -124,8 +155,6 @@ class colorSpace(object):
             if light == self.lights['s']:
                 self.lights['sInd'] = i
                 print self.Sc[i]
-
-
         
         print np.sum(Lresponse), np.sum(Mresponse), np.sum(Sresponse)
         
