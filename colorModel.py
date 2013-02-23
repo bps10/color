@@ -226,7 +226,7 @@ class colorModel():
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10]
 
-        self.lensMacula = 10 ** lens[:361, 1] + 10 ** macula[:361, 1]
+        self.lensMacula = 10 ** (lens[:361, 1] + macula[:361, 1])
 
     def rectify(self, plot=True):
 

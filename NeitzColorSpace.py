@@ -5,7 +5,6 @@ import numpy as np
 from spectsens import spectsens
 import PlottingFun as pf
 
-
 ## todo:: Create a logging function.
 
 class colorSpace(object):
@@ -13,136 +12,70 @@ class colorSpace(object):
     def __init__(self, stim='wright'):
 
         if stim.lower() == 'wright':
-            self.lights = {'l': 650.0, 'm': 530.0, 's': 460.0, }
+            self.lights = {
+                            'l': 650.0,
+                            'm': 530.0,
+                            's': 460.0,
+                           }
         if stim.lower() == 'stockman':
-            self.lights = {'l': 645.0, 'm': 526.0, 's': 444.0, }
-
-    def genLMS(self, LMSpeaks=[559.0, 530.0, 422.0], fund='compare'):
-
+            self.lights = {'l': 645.0, 
+                           'm': 526.0, 
+                           's': 444.0, }
+        
+    def genLMS(self, LMSpeaks=[559.0, 530.0, 421.0], fund='neitz'):
+        '''
+        '''
         if len(LMSpeaks) != 3:
             print 'LMSpeaks must be length 3! Using defaults: 559, 530, 417nm'
             LMSpeaks = [559.0, 530.0, 421.0]
         
         if fund.lower() == 'stockman':
-            fundamentals = False
-            if fundamentals is True:
-                foo = np.genfromtxt('stockman/fundamentals2deg.csv', 
-                                     delimiter=',')[::10, :]
-                self.Lc = 10.0 ** foo[:, 1]
-                self.Mc = 10.0 ** foo[:, 2]
-                self.Sc = 10.0 ** foo[:, 3]
-        
-                Lresponse = self.Lc * self.spectrum
-                Mresponse = self.Mc * self.spectrum
-                Sresponse = self.Sc * self.spectrum
-            
-            else:
-                foo = np.genfromtxt('stockman/specSens.csv', 
-                                    delimiter=',')[::10, :]
-                self.Lc = 10.0 ** foo[:, 1]
-                self.Mc = 10.0 ** foo[:, 2]
-                self.Sc = 10.0 ** foo[:, 3]
-        
-                Lresponse = self.Lc / self.filters# * self.spectrum
-                Mresponse = self.Mc / self.filters# * self.spectrum
-                Sresponse = self.Sc / self.filters# * self.spectrum
-            
-        if fund.lower() == 'neitz' or fund.lower() == 'compare':
-            
-            self.Lc = spectsens(LMSpeaks[0], 0.5, 'log',
-                                             min(self.spectrum), 
-                                             max(self.spectrum), 1)[1]
-            self.Mc = spectsens(LMSpeaks[1], 0.5, 'log',
-                                             min(self.spectrum), 
-                                             max(self.spectrum), 1)[1]
-            self.Sc = spectsens(LMSpeaks[2], 0.4, 'log',
-                                             min(self.spectrum), 
-                                             max(self.spectrum), 1)[1]
 
-            self.Lc = 1. - 10.0 ** -((self.Lc) * 0.5)
-            self.Mc = 1. - 10.0 ** -((self.Mc) * 0.5)   
-            self.Sc = 1. - 10.0 ** -((self.Sc) * 0.4)                                 
-            self.Lc = 10.0 ** self.Lc
-            self.Mc = 10.0 ** self.Mc
-            self.Sc = 10.0 ** self.Sc                                           
+            foo = np.genfromtxt('stockman/fundamentals2deg.csv', 
+                                 delimiter=',')[::10, :]
+            self.Lc = 10.0 ** foo[:, 1]
+            self.Mc = 10.0 ** foo[:, 2]
+            self.Sc = 10.0 ** foo[:, 3]
+    
+            Lresponse = self.Lc * self.spectrum
+            Mresponse = self.Mc * self.spectrum
+            Sresponse = self.Sc * self.spectrum
+            
+        elif fund.lower() == 'stockspecsens':
+            
+            foo = np.genfromtxt('stockman/specSens.csv', 
+                                delimiter=',')[::10, :]
+
+            LS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 1]) *
+                    0.5)) / (1.0 - 10 ** -0.5))
+            MS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 2]) *
+                    0.5)) / (1.0 - 10 ** -0.5))
+            SS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 3]) *
+                    0.5)) / (1.0 - 10 ** -0.4))
+          
+            self.Lc = 10.0 ** LS
+            self.Mc = 10.0 ** MS 
+            self.Sc = 10.0 ** SS
+            
             Lresponse = self.Lc / self.filters * self.spectrum
             Mresponse = self.Mc / self.filters * self.spectrum
             Sresponse = self.Sc / self.filters * self.spectrum
             
-        if fund.lower() == 'compare':
-            comp = [True, True, False]
-            if comp[0] == True:
-                foo = np.genfromtxt('stockman/fundamentals2deg.csv',
-                                    delimiter=',')[::10, :]
-                
-                LN = 10.0 ** foo[:, 1]
-                MN = 10.0 ** foo[:, 2]
-                SN = 10.0 ** foo[:, 3]  
-                LN *= self.spectrum
-                MN *= self.spectrum
-                SN *= self.spectrum
-                LN /= max(LN)
-                MN /= max(MN)
-                SN /= max(SN)
-                
-            if comp[1] == True:
-                foo = np.genfromtxt('stockman/specSens.csv',
-                                    delimiter=',')[::10, :]
-
-                LS =  1. - 10.0 ** -((foo[:, 1]) * 0.5)
-                MS =  1. - 10.0 ** -((foo[:, 2]) * 0.5)
-                SS =  1. - 10.0 ** -((foo[:, 3]) * 0.4)
-                LS = 10.0**LS
-                MS = 10.0**MS
-                SS = 10.0**SS
-                LS /= self.filters 
-                MS /= self.filters
-                SS /= self.filters
-                LS /= max(LS)
-                MS /= max(MS)
-                SS /= max(SS)
-
-                
-            if comp[2] == True:
-                LN = spectsens(LMSpeaks[0], 0.5, 'log',
-                                                 min(self.spectrum), 
-                                                 max(self.spectrum), 1)[1]
-                MN = spectsens(LMSpeaks[1], 0.5, 'log',
-                                                 min(self.spectrum), 
-                                                 max(self.spectrum), 1)[1]
-                SN = spectsens(LMSpeaks[2], 0.4, 'log',
-                                                 min(self.spectrum), 
-                                                 max(self.spectrum), 1)[1]
-
-                LN = 1. - 10.0 ** -((LN) * 0.5)
-                MN = 1. - 10.0 ** -((MN) * 0.5)   
-                SN = 1. - 10.0 ** -((SN) * 0.4)                                 
-                LN = 10.0**LN
-                MN = 10.0**MN
-                SN = 10.0**SN
-                LN /= self.filters * self.spectrum
-                MN /= self.filters * self.spectrum
-                SN /= self.filters * self.spectrum
-                LN /= max(LN)
-                MN /= max(MN)
-                SN /= max(SN)
-    
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            pf.AxisFormat()
-            pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-            ax.plot(self.spectrum, LS, 'r--', linewidth=2)
-            ax.plot(self.spectrum, LN, 'r-', linewidth=2)
-            ax.plot(self.spectrum, MS, 'g--', linewidth=2)
-            ax.plot(self.spectrum, MN, 'g-', linewidth=2)
-            ax.plot(self.spectrum, SS, 'b--', linewidth=2)
-            ax.plot(self.spectrum, SN, 'b-', linewidth=2)
-            #ax.set_ylim([-0.01, 1.01])
-            ax.set_xlim([380, 781])
-            ax.set_xlabel('wavelength (nm)')
-            ax.set_ylabel('sensitivity')        
-            plt.tight_layout()
-            plt.show()
+        elif fund.lower() == 'neitz':
+            
+            self.Lc = spectsens(LMSpeaks[0], 0.5, 'anti-log',
+                                             min(self.spectrum), 
+                                             max(self.spectrum), 1)[1]
+            self.Mc = spectsens(LMSpeaks[1], 0.5, 'anti-log',
+                                             min(self.spectrum), 
+                                             max(self.spectrum), 1)[1]
+            self.Sc = spectsens(LMSpeaks[2], 0.4, 'anti-log',
+                                             min(self.spectrum), 
+                                             max(self.spectrum), 1)[1]
+                                                         
+            Lresponse = self.Lc / self.filters * self.spectrum
+            Mresponse = self.Mc / self.filters * self.spectrum
+            Sresponse = self.Sc / self.filters * self.spectrum
             
         for i, light in enumerate(self.spectrum):
 
@@ -156,33 +89,30 @@ class colorSpace(object):
                 self.lights['sInd'] = i
                 print self.Sc[i]
         
-        print np.sum(Lresponse), np.sum(Mresponse), np.sum(Sresponse)
-        
         self.Lnorm = Lresponse / np.max(Lresponse)
         self.Mnorm = Mresponse / np.max(Mresponse)
         self.Snorm = Sresponse / np.max(Sresponse)
 
     def genTrichromaticEquation(self):
-
+        '''
+        '''
         self.f_r = lambda r, g, b: r / (r + g + b)
         self.f_g = lambda r, g, b: g / (r + g + b)
         self.f_b = lambda r, g, b: b / (r + g + b)
 
     def genStockmanFilter(self):
-
+        '''
+        '''
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10, :]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10, :]
-        self.filters = 10.0 ** lens[:, 1] + 10.0 ** macula[:, 1]
+        self.luminance = np.genfromtxt('stockman/logCIE2008v2q_fine.csv', 
+                                  delimiter=',')[::10, 1]
+        self.filters = 10.0 ** (lens[:, 1] +  macula[:, 1])
         self.spectrum = lens[:, 0]
-
-    def quanta2energy(self, quanta, lambdas):
-        h = 6.628e-34
-        c = 2.998e+08
-        energy = (quanta * h * c) / 1e-9 * lambdas
-        return energy
         
     def LMStoCMFs(self):
-        
+        '''
+        '''
         self.genStockmanFilter()
         self.genLMS()
         self.genTrichromaticEquation()
@@ -207,38 +137,70 @@ class colorSpace(object):
         self.CMFs = np.dot(np.linalg.inv(convMatrix), LMSsens)
 
     def CMFtoEE_CMF(self):   
-        
+        '''
+        '''
         self.CMFs[0, :] *= 100. / sum(self.CMFs[0, :]) 
         self.CMFs[1, :] *= 100. / sum(self.CMFs[1, :])
         self.CMFs[2, :] *= 100. / sum(self.CMFs[2, :])
 
     def EE_CMFtoRGB(self):
-        
+        '''
+        '''
         self.rVal = self.f_r(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
         self.gVal = self.f_g(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
         self.bVal = self.f_b(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
     
-    def find_rgb(self, testLight=600, LMS=[1, 1, 1]):
-        
+    def find_rgb(self, testLight=600):
+        '''
+        '''
         rOut = np.interp(testLight, self.spectrum, self.rVal)
         gOut = np.interp(testLight, self.spectrum, self.gVal)
         bOut = np.interp(testLight, self.spectrum, self.bVal)
 
-        total = sum(LMS)
-        rOut *= LMS[0] * total
-        gOut *= LMS[1] * total        
-        bOut *= LMS[2] * total        
-        
         return [rOut, gOut, bOut]        
         
+    def find_testLight(self, LMS=[1/3, 1/3, 1/3]):
+        '''
+        '''
+        pass
+    
     def returnCMFs(self):
+        '''
+        '''
         return {'cmfs': self.CMFs, 'wavelengths': self.spectrum, }
     
     def return_xyz(self):
+        '''
+        '''
         return {'x': self.xVal, 'y': self.yVal, 'z': self.zVal, }
 
-    def plotFilters(self):
+    def plotCompare(self, compare=['stockman', 'stockSpecSens', 'neitz']):
+        '''
+        '''
+        self.genStockmanFilter()
         
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pf.AxisFormat()
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+        style = ['-', '--', '-.']
+        for i, condition in enumerate(compare):
+            print condition
+            self.genLMS(fund=condition)
+            
+            ax.plot(self.spectrum, self.Lnorm, 'r' + style[i], linewidth=2)
+            ax.plot(self.spectrum, self.Mnorm, 'g' + style[i], linewidth=2)
+            ax.plot(self.spectrum, self.Snorm, 'b' + style[i], linewidth=2)
+        #ax.set_ylim([-0.01, 1.01])
+        ax.set_xlim([380, 781])
+        ax.set_xlabel('wavelength (nm)')
+        ax.set_ylabel('sensitivity')        
+        plt.tight_layout()
+        plt.show()
+            
+    def plotFilters(self):
+        '''
+        '''
         try:
             plt.__version__
         except NameError:
@@ -257,7 +219,8 @@ class colorSpace(object):
         plt.show()
 
     def plotSpecSens(self):
-        
+        '''
+        '''
         try:
             plt.show()
         except NameError:
@@ -282,7 +245,8 @@ class colorSpace(object):
         plt.show()
 
     def plotCMFs(self):
-
+        '''
+        '''
         try:
             plt.__version__
         except NameError:
@@ -301,7 +265,30 @@ class colorSpace(object):
         plt.tight_layout()
         plt.show()
 
-    def plotColorSpace(self):
+    def plotcoeff(self):
+        '''
+        '''
+        try:
+            plt.__version__
+        except NameError:
+            import matplotlib.pylab as plt
+            
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pf.AxisFormat()
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+        ax.plot(self.spectrum, self.rVal, 'r', linewidth=2)
+        ax.plot(self.spectrum, self.gVal, 'g', linewidth=2)
+        ax.plot(self.spectrum, self.bVal, 'b', linewidth=2)
+        ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
+        ax.set_xlabel('wavelength (nm)')
+        ax.set_ylabel('coefficients')
+        plt.tight_layout()
+        plt.show()
+        
+    def plotColorSpace(self, deutanope=500, protanope=495.5):
+        '''
+        '''
         
         try:
             plt.__version__
@@ -321,28 +308,42 @@ class colorSpace(object):
         ax.plot(1.0/3.0, 1.0/3.0, 'ko', markersize=5)
         ax.annotate(s='{}'.format('E'), xy=(1./3.,1./3.), xytext=(2,8),
                     ha='right', textcoords='offset points', fontsize=14)
-                    
+
+        xDelta = self.find_rgb(deutanope)[0] - 1/3
+        yDelta = self.find_rgb(deutanope)[1] - 1/3
+        print xDelta, yDelta
+        ax.plot([self.find_rgb(deutanope)[0], 1/3, 1/3-xDelta, 1/3-2*xDelta],
+                 [self.find_rgb(deutanope)[1], 1/3, 1/3-yDelta, 1/3-2*yDelta],
+                 'k--', linewidth=1.5)   
+
+        xDelta = self.find_rgb(protanope)[0] - 1/3
+        yDelta = self.find_rgb(protanope)[1] - 1/3
+        print xDelta, yDelta
+        ax.plot([self.find_rgb(protanope)[0], 1/3, 1/3-xDelta, 1/3-2*xDelta], 
+                 [self.find_rgb(protanope)[1], 1/3, 1/3-yDelta, 1/3-2*yDelta],
+                 'k-', linewidth=1.5)
+                 
         # annotate plot
         dat = zip(self.spectrum[::10], self.rVal[::10], self.gVal[::10])
         for text, X, Y in dat:
             if text > 460 and text < 630:
 
                 if text <= 500: 
-                    ax.scatter(X-0.02, Y, marker='_', s=150, c='k')
+                    ax.scatter(X - 0.02, Y, marker='_', s=150, c='k')
                     ax.annotate(s='{}'.format(int(text)),
                                 xy=(X, Y), 
                                 xytext=(-15, -5), 
                                 ha='right', 
                                 textcoords='offset points', fontsize=16)
                 elif text > 500 and text <= 510:
-                    ax.scatter(X, Y+0.02, marker='|', s=150, c='k')
+                    ax.scatter(X, Y + 0.02, marker='|', s=150, c='k')
                     ax.annotate(s='{}'.format(int(text)),
                                 xy=(X, Y), 
                                 xytext=(5, 20), 
                                 ha='right', 
                                 textcoords='offset points', fontsize=16) 
                 else:
-                    ax.scatter(X+0.02, Y, marker='_', s=150, c='k')
+                    ax.scatter(X + 0.02, Y, marker='_', s=150, c='k')
                     ax.annotate(s='{}'.format(int(text)),
                                 xy=(X, Y), 
                                 xytext=(45, -5), 
@@ -359,8 +360,12 @@ if __name__ == '__main__':
     import matplotlib.pylab as plt
     color = colorSpace()
     color.LMStoCMFs()
-    #color.plotSpecSens()
     color.CMFtoEE_CMF()
     color.EE_CMFtoRGB()
-    color.plotCMFs()
+    
+    #color.plotCompare()
+    #color.plotSpecSens()
+    #color.plotCMFs()
+    color.plotcoeff()
     color.plotColorSpace()
+    
