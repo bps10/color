@@ -305,7 +305,7 @@ class colorSpace(object):
         plt.tight_layout()
         plt.show()
         
-    def plotColorSpace(self, deutan=491, protan=488.5, tritan=558.5):
+    def plotColorSpace(self):
         '''
         '''
         
@@ -315,98 +315,69 @@ class colorSpace(object):
             import matplotlib.pylab as plt
             
         fig = plt.figure()
-        ax = fig.add_subplot(111)
+        self.cs_ax = fig.add_subplot(111)
         pf.AxisFormat(FONTSIZE=10, TickSize=6)
-        pf.centerAxes(ax)
+        pf.centerAxes(self.cs_ax)
 
-        ax.plot(self.rVal, self.gVal, 'k', linewidth=3)
+        self.cs_ax.plot(self.rVal, self.gVal, 'k', linewidth=3.5)
 
         # add equi-energy location to plot
-        ax.plot(1.0/3.0, 1.0/3.0, 'ko', markersize=5)
-        ax.annotate(s='{}'.format('E'), xy=(1./3.,1./3.), xytext=(2,8),
+        self.cs_ax.plot(1.0/3.0, 1.0/3.0, 'ko', markersize=5)
+        self.cs_ax.annotate(s='{}'.format('E'), xy=(1./3.,1./3.), xytext=(2,8),
                     ha='right', textcoords='offset points', fontsize=14)
 
-        # add confusion lines
-        self.find_copunctuals()
-        print self.copunctuals
-        
-                                                        
-        ax.plot([self.find_testLight(deutan)[0],
-                 self.copunctuals['deutan'][0]],
-                 [self.find_testLight(deutan)[1], 
-                  self.copunctuals['deutan'][1]],
-                 'k--o', linewidth=1.5)   
-
-        ax.plot([self.find_testLight(protan)[0], 
-                 self.copunctuals['protan'][0]],
-                 [self.find_testLight(protan)[1], 
-                  self.copunctuals['protan'][1]],
-                 'k-o', linewidth=1.5)  
-
-        ax.plot([self.find_testLight(tritan)[0], 
-                 self.copunctuals['tritan'][0]],
-                 [self.find_testLight(tritan)[1], 
-                  self.copunctuals['tritan'][1]],
-                 'k-o', linewidth=1.5)  
-                 
-                 
         # annotate plot
         dat = zip(self.spectrum[::10], self.rVal[::10], self.gVal[::10])
         for text, X, Y in dat:
             if text > 460 and text < 630:
 
                 if text <= 500: 
-                    ax.scatter(X - 0.02, Y, marker='_', s=150, c='k')
-                    ax.annotate(s='{}'.format(int(text)),
+                    self.cs_ax.scatter(X - 0.02, Y, marker='_', s=150, c='k')
+                    self.cs_ax.annotate(s='{}'.format(int(text)),
                                 xy=(X, Y), 
                                 xytext=(-15, -5), 
                                 ha='right', 
                                 textcoords='offset points', fontsize=16)
                 elif text > 500 and text <= 510:
-                    ax.scatter(X, Y + 0.02, marker='|', s=150, c='k')
-                    ax.annotate(s='{}'.format(int(text)),
+                    self.cs_ax.scatter(X, Y + 0.02, marker='|', s=150, c='k')
+                    self.cs_ax.annotate(s='{}'.format(int(text)),
                                 xy=(X, Y), 
                                 xytext=(5, 20), 
                                 ha='right', 
                                 textcoords='offset points', fontsize=16) 
                 else:
-                    ax.scatter(X + 0.02, Y, marker='_', s=150, c='k')
-                    ax.annotate(s='{}'.format(int(text)),
+                    self.cs_ax.scatter(X + 0.02, Y, marker='_', s=150, c='k')
+                    self.cs_ax.annotate(s='{}'.format(int(text)),
                                 xy=(X, Y), 
                                 xytext=(45, -5), 
                                 ha='right', 
                                 textcoords='offset points', fontsize=16)
                     
-        #ax.set_ylim([-0.01, 2.25])
         plt.tight_layout()
-        plt.show()
+        #plt.show()
 
-    def addConfusionLines(self, ax, deutan, protan, tritan):
-        '''
+    def addConfusionLines(self, deficit='protan'):
+        ''' deutan=491, protan=488.5, tritan=558.5
         '''
         # add confusion lines
         self.find_copunctuals()
         print self.copunctuals
         
-                                                        
-        ax.plot([self.find_testLight(deutan)[0],
-                 self.copunctuals['deutan'][0]],
-                 [self.find_testLight(deutan)[1], 
-                  self.copunctuals['deutan'][1]],
-                 'k--o', linewidth=1.5)   
+        if deficit.lower() == 'deutan' or deficit.lower() == 'protan':
+            lambdas = [420, 460, 470, 480, 490, 500, 515,]
+        elif deficit.lower() == 'tritan':
+            lambdas = [470, 500, 520, 535, 545, 555, 570, 585, 600, 625, 700]
+        
+        self.cs_ax.plot(self.copunctuals[deficit][0], 
+                        self.copunctuals[deficit][1], 'ko', markersize=8)
+        for lam in lambdas:
+            self.cs_ax.plot([self.find_testLight(lam)[0],
+                     self.copunctuals[deficit][0]],
+                     [self.find_testLight(lam)[1], 
+                      self.copunctuals[deficit][1]],
+                     'k-', linewidth=1)   
 
-        ax.plot([self.find_testLight(protan)[0], 
-                 self.copunctuals['protan'][0]],
-                 [self.find_testLight(protan)[1], 
-                  self.copunctuals['protan'][1]],
-                 'k-o', linewidth=1.5)  
-
-        ax.plot([self.find_testLight(tritan)[0], 
-                 self.copunctuals['tritan'][0]],
-                 [self.find_testLight(tritan)[1], 
-                  self.copunctuals['tritan'][1]],
-                 'k-o', linewidth=1.5)  
-                 
+        plt.show()                 
 
 
 if __name__ == '__main__':
@@ -422,4 +393,5 @@ if __name__ == '__main__':
     #color.plotCMFs()
     #color.plotcoeff()
     color.plotColorSpace()
+    color.addConfusionLines()
     
