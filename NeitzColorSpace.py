@@ -93,12 +93,15 @@ class colorSpace(object):
         self.Mnorm = Mresponse / np.max(Mresponse)
         self.Snorm = Sresponse / np.max(Sresponse)
 
-    def genTrichromaticEquation(self):
+    def TrichromaticEquation(self, r, g, b):
         '''
         '''
-        self.f_r = lambda r, g, b: r / (r + g + b)
-        self.f_g = lambda r, g, b: g / (r + g + b)
-        self.f_b = lambda r, g, b: b / (r + g + b)
+        rgb = r + g + b
+        r_ = r / rgb
+        g_ = g / rgb
+        b_ = b / rgb
+        
+        return r_, g_, b_
 
     def genStockmanFilter(self):
         '''
@@ -115,11 +118,10 @@ class colorSpace(object):
         '''
         self.genStockmanFilter()
         self.genLMS()
-        self.genTrichromaticEquation()
-        
+   
         LMSsens = np.array([self.Lnorm.T, self.Mnorm.T, self.Snorm.T])
 
-        convMatrix = np.array([
+        self.convMatrix = np.array([
             [self.Lnorm[self.lights['lInd']],
             self.Lnorm[self.lights['mInd']],
             self.Lnorm[self.lights['sInd']]],
@@ -132,9 +134,9 @@ class colorSpace(object):
             self.Snorm[self.lights['mInd']],
             self.Snorm[self.lights['sInd']]]])
 
-        print convMatrix
+        print self.convMatrix
         
-        self.CMFs = np.dot(np.linalg.inv(convMatrix), LMSsens)
+        self.CMFs = np.dot(np.linalg.inv(self.convMatrix), LMSsens)
 
     def CMFtoEE_CMF(self):   
         '''
@@ -146,11 +148,21 @@ class colorSpace(object):
     def EE_CMFtoRGB(self):
         '''
         '''
-        self.rVal = self.f_r(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
-        self.gVal = self.f_g(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
-        self.bVal = self.f_b(self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+        self.rVal, self.gVal, self.bVal = self.TrichromaticEquation(
+                            self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+
+    def find_copunctuals(self):
+        '''
+        '''
+        protan = self.find_rgb(np.array([1, 0, 0]))
+        deutan = self.find_rgb(np.array([0, 1, 0]))
+        tritan = self.find_rgb(np.array([0, 0, 1]))
+        
+        self.copunctuals = {'protan': protan, 
+                            'deutan': deutan, 
+                            'tritan': tritan, }
     
-    def find_rgb(self, testLight=600):
+    def find_testLight(self, testLight=600):
         '''
         '''
         rOut = np.interp(testLight, self.spectrum, self.rVal)
@@ -159,20 +171,27 @@ class colorSpace(object):
 
         return [rOut, gOut, bOut]        
         
-    def find_testLight(self, LMS=[1/3, 1/3, 1/3]):
+    def find_rgb(self, LMS=np.array([1/3, 1/3, 1/3])):
         '''
         '''
-        pass
+        out = np.dot(np.linalg.inv(self.convMatrix), LMS)
+        out = self.TrichromaticEquation(out[0], out[1], out[2])
+        return out
+        
+    def returnConvMat(self):
+        '''
+        '''
+        return self.convMatrix
     
     def returnCMFs(self):
         '''
         '''
         return {'cmfs': self.CMFs, 'wavelengths': self.spectrum, }
     
-    def return_xyz(self):
+    def return_rgb(self):
         '''
         '''
-        return {'x': self.xVal, 'y': self.yVal, 'z': self.zVal, }
+        return {'r': self.rVal, 'g': self.gVal, 'b': self.bVal, }
 
     def plotCompare(self, compare=['stockman', 'stockSpecSens', 'neitz']):
         '''
@@ -286,7 +305,7 @@ class colorSpace(object):
         plt.tight_layout()
         plt.show()
         
-    def plotColorSpace(self, deutanope=500, protanope=495.5):
+    def plotColorSpace(self, deutan=491, protan=488.5, tritan=558.5):
         '''
         '''
         
@@ -300,8 +319,6 @@ class colorSpace(object):
         pf.AxisFormat(FONTSIZE=10, TickSize=6)
         pf.centerAxes(ax)
 
-        # filter for positive y vals
-        # ind = self.yVal >= 0
         ax.plot(self.rVal, self.gVal, 'k', linewidth=3)
 
         # add equi-energy location to plot
@@ -309,19 +326,29 @@ class colorSpace(object):
         ax.annotate(s='{}'.format('E'), xy=(1./3.,1./3.), xytext=(2,8),
                     ha='right', textcoords='offset points', fontsize=14)
 
-        xDelta = self.find_rgb(deutanope)[0] - 1/3
-        yDelta = self.find_rgb(deutanope)[1] - 1/3
-        print xDelta, yDelta
-        ax.plot([self.find_rgb(deutanope)[0], 1/3, 1/3-xDelta, 1/3-2*xDelta],
-                 [self.find_rgb(deutanope)[1], 1/3, 1/3-yDelta, 1/3-2*yDelta],
-                 'k--', linewidth=1.5)   
+        # add confusion lines
+        self.find_copunctuals()
+        print self.copunctuals
+        
+                                                        
+        ax.plot([self.find_testLight(deutan)[0],
+                 self.copunctuals['deutan'][0]],
+                 [self.find_testLight(deutan)[1], 
+                  self.copunctuals['deutan'][1]],
+                 'k--o', linewidth=1.5)   
 
-        xDelta = self.find_rgb(protanope)[0] - 1/3
-        yDelta = self.find_rgb(protanope)[1] - 1/3
-        print xDelta, yDelta
-        ax.plot([self.find_rgb(protanope)[0], 1/3, 1/3-xDelta, 1/3-2*xDelta], 
-                 [self.find_rgb(protanope)[1], 1/3, 1/3-yDelta, 1/3-2*yDelta],
-                 'k-', linewidth=1.5)
+        ax.plot([self.find_testLight(protan)[0], 
+                 self.copunctuals['protan'][0]],
+                 [self.find_testLight(protan)[1], 
+                  self.copunctuals['protan'][1]],
+                 'k-o', linewidth=1.5)  
+
+        ax.plot([self.find_testLight(tritan)[0], 
+                 self.copunctuals['tritan'][0]],
+                 [self.find_testLight(tritan)[1], 
+                  self.copunctuals['tritan'][1]],
+                 'k-o', linewidth=1.5)  
+                 
                  
         # annotate plot
         dat = zip(self.spectrum[::10], self.rVal[::10], self.gVal[::10])
@@ -354,6 +381,33 @@ class colorSpace(object):
         plt.tight_layout()
         plt.show()
 
+    def addConfusionLines(self, ax, deutan, protan, tritan):
+        '''
+        '''
+        # add confusion lines
+        self.find_copunctuals()
+        print self.copunctuals
+        
+                                                        
+        ax.plot([self.find_testLight(deutan)[0],
+                 self.copunctuals['deutan'][0]],
+                 [self.find_testLight(deutan)[1], 
+                  self.copunctuals['deutan'][1]],
+                 'k--o', linewidth=1.5)   
+
+        ax.plot([self.find_testLight(protan)[0], 
+                 self.copunctuals['protan'][0]],
+                 [self.find_testLight(protan)[1], 
+                  self.copunctuals['protan'][1]],
+                 'k-o', linewidth=1.5)  
+
+        ax.plot([self.find_testLight(tritan)[0], 
+                 self.copunctuals['tritan'][0]],
+                 [self.find_testLight(tritan)[1], 
+                  self.copunctuals['tritan'][1]],
+                 'k-o', linewidth=1.5)  
+                 
+
 
 if __name__ == '__main__':
 
@@ -366,6 +420,6 @@ if __name__ == '__main__':
     #color.plotCompare()
     #color.plotSpecSens()
     #color.plotCMFs()
-    color.plotcoeff()
+    #color.plotcoeff()
     color.plotColorSpace()
     

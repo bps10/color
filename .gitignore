@@ -1,4 +1,4 @@
 figures/
 *.nja
-*.pyc
+*.py[c,o]
 .spyderproject
