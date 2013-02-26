@@ -30,19 +30,19 @@ class colorSpace(object):
             LMSpeaks = [559.0, 530.0, 421.0]
         
         if fund.lower() == 'stockman':
-
+            ind = len(self.spectrum)
             foo = np.genfromtxt('stockman/fundamentals2deg.csv', 
                                  delimiter=',')[::10, :]
-            self.Lc = 10.0 ** foo[:, 1]
-            self.Mc = 10.0 ** foo[:, 2]
-            self.Sc = 10.0 ** foo[:, 3]
+            self.Lc = 10.0 ** foo[:ind, 1]
+            self.Mc = 10.0 ** foo[:ind, 2]
+            self.Sc = 10.0 ** foo[:ind, 3]
     
             Lresponse = self.Lc * self.spectrum
             Mresponse = self.Mc * self.spectrum
             Sresponse = self.Sc * self.spectrum
             
         elif fund.lower() == 'stockspecsens':
-            
+            ind = len(self.spectrum)
             foo = np.genfromtxt('stockman/specSens.csv', 
                                 delimiter=',')[::10, :]
 
@@ -53,9 +53,9 @@ class colorSpace(object):
             SS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 3]) *
                     0.5)) / (1.0 - 10 ** -0.4))
           
-            self.Lc = 10.0 ** LS
-            self.Mc = 10.0 ** MS 
-            self.Sc = 10.0 ** SS
+            self.Lc = 10.0 ** LS[:ind]
+            self.Mc = 10.0 ** MS[:ind]
+            self.Sc = 10.0 ** SS[:ind]
             
             Lresponse = self.Lc / self.filters * self.spectrum
             Mresponse = self.Mc / self.filters * self.spectrum
@@ -81,13 +81,10 @@ class colorSpace(object):
 
             if light == self.lights['l']:
                 self.lights['lInd'] = i
-                print self.Lc[i]
             if light == self.lights['m']:
                 self.lights['mInd'] = i
-                print self.Mc[i]
             if light == self.lights['s']:
                 self.lights['sInd'] = i
-                print self.Sc[i]
         
         self.Lnorm = Lresponse / np.max(Lresponse)
         self.Mnorm = Mresponse / np.max(Mresponse)
@@ -103,24 +100,31 @@ class colorSpace(object):
         
         return r_, g_, b_
 
-    def genStockmanFilter(self):
+    def genStockmanFilter(self, maxLambda=770):
         '''
         '''
         lens = np.genfromtxt('stockman/lens.csv', delimiter=',')[::10, :]
         macula = np.genfromtxt('stockman/macular.csv', delimiter=',')[::10, :]
-        self.luminance = np.genfromtxt('stockman/logCIE2008v2q_fine.csv', 
-                                  delimiter=',')[::10, 1]
-        self.filters = 10.0 ** (lens[:, 1] +  macula[:, 1])
-        self.spectrum = lens[:, 0]
+
+        spectrum = lens[:, 0]
+        ind = np.where(spectrum == maxLambda)[0]
+        self.spectrum = spectrum[:ind+1]
+        
+        self.filters = 10.0 ** (lens[:ind+1, 1] +  macula[:ind+1, 1])
         
     def LMStoCMFs(self):
         '''
         '''
         self.genStockmanFilter()
         self.genLMS()
-   
+        self.genConvMatrix()
+        
         LMSsens = np.array([self.Lnorm.T, self.Mnorm.T, self.Snorm.T])
-
+        self.CMFs = np.dot(np.linalg.inv(self.convMatrix), LMSsens)
+        
+    def genConvMatrix(self):
+        '''
+        '''
         self.convMatrix = np.array([
             [self.Lnorm[self.lights['lInd']],
             self.Lnorm[self.lights['mInd']],
@@ -136,7 +140,6 @@ class colorSpace(object):
 
         print self.convMatrix
         
-        self.CMFs = np.dot(np.linalg.inv(self.convMatrix), LMSsens)
 
     def CMFtoEE_CMF(self):   
         '''
@@ -308,6 +311,12 @@ class colorSpace(object):
     def plotColorSpace(self):
         '''
         '''
+        self._plotColorSpace()
+        plt.show()
+        
+    def _plotColorSpace(self):
+        '''
+        '''
         
         try:
             plt.__version__
@@ -352,22 +361,27 @@ class colorSpace(object):
                                 xytext=(45, -5), 
                                 ha='right', 
                                 textcoords='offset points', fontsize=16)
-                    
+        
+        #self.cs_ax.set_xlim([-0.4, 1.2])
+        #self.cs_ax.set_ylim([-0.2, 1.2])
+        
         plt.tight_layout()
         #plt.show()
 
-    def addConfusionLines(self, deficit='protan'):
-        ''' deutan=491, protan=488.5, tritan=558.5
+    def plotConfusionLines(self, deficit='protan'):
+        '''add confusion lines
         '''
-        # add confusion lines
+        
+        self._plotColorSpace()
         self.find_copunctuals()
-        print self.copunctuals
+        print deficit, ': ', self.copunctuals[deficit]
         
         if deficit.lower() == 'deutan' or deficit.lower() == 'protan':
             lambdas = [420, 460, 470, 480, 490, 500, 515,]
         elif deficit.lower() == 'tritan':
-            lambdas = [470, 500, 520, 535, 545, 555, 570, 585, 600, 625, 700]
-        
+            lambdas = [420, 460, 480, 500, 520, 535, 545, 555,
+                       570, 585, 600, 625, 700]
+
         self.cs_ax.plot(self.copunctuals[deficit][0], 
                         self.copunctuals[deficit][1], 'ko', markersize=8)
         for lam in lambdas:
@@ -376,7 +390,8 @@ class colorSpace(object):
                      [self.find_testLight(lam)[1], 
                       self.copunctuals[deficit][1]],
                      'k-', linewidth=1)   
-
+                     
+        self.cs_ax.text(0.7, 1, deficit, fontsize=18)
         plt.show()                 
 
 
@@ -392,6 +407,6 @@ if __name__ == '__main__':
     #color.plotSpecSens()
     #color.plotCMFs()
     #color.plotcoeff()
-    color.plotColorSpace()
-    color.addConfusionLines()
+    #color.plotColorSpace()
+    color.plotConfusionLines()
     
