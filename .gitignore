@@ -1,0 +1,15 @@
+
+.elasticbeanstalk/
+.DS_Store
+NeitzModel/local_settings.py
+*.py[co]
+build/
+db.db
+.ebextensions/
+*.log
+*.pot
+.spyderproject
+.spyderworkspace
+
+NeitzModel.nja
+test/
