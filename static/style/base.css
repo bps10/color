@@ -1,0 +1,91 @@
+body {
+  background: white;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 38px;
+  position: auto;
+
+}
+
+table {
+    font-size: 18px;
+    font-family: "Helvetica Neue";
+    padding-right: 10px;
+}
+
+aside {
+    right: 40px;
+    font-size: 14px;
+    }
+
+td,th,tr {
+    padding-right: 10px;
+    border-bottom: 1.5px solid #969696;
+}
+
+.title {
+  position: relative;
+  top: 30px;
+  left: 40px;
+  font-weight: bold;
+  font-family: "Helvetica Neue";
+  font-size: 40px;
+  border-left: 2px solid black;
+  padding-left: 20px;
+
+}
+
+
+.JAX {
+  color: black;
+  font-size: 32px;
+}
+
+
+#corner {
+  position: absolute;
+  bottom: 100px;
+  right: 30px;
+  border-left: 2px solid black;
+  padding-left: 20px;
+
+.grey {
+  color: #969696;
+} 
+
+button,
+input,
+select,
+textarea {
+  margin: 0;
+  font-size: 100%;
+  vertical-align: middle;
+}
+
+button,
+input {
+  *overflow: visible;
+  line-height: normal;
+}
+
+button::-moz-focus-inner,
+input::-moz-focus-inner {
+  padding: 0;
+  border: 0;
+}
+
+label,
+input,
+button,
+select,
+textarea {
+  font-size: 14px;
+  font-weight: normal;
+  line-height: 20px;
+}
+
+input,
+button,
+select,
+textarea {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

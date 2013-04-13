@@ -5,12 +5,14 @@
 
 ## Revisiting opponency
 
-
-...
-
+####Young-Helmholtz
+####Hering
+####Hurvich & Jameson
+####DeValois & DeValois
+####Stockman & Brainard
+####Neitz
 
 ## Color space
-
 
 1. *Lights* - We adopt the primaries used by WD Wright [r: 650.0nm, g: 530nm, b: 460nm].  As an alternative option we also include those used by Stockman [r: 645nm, g: 526nm, s: 444nm].
 
@@ -23,3 +25,5 @@
 5. *[Protanope, Deuteranope, Tritanope] confusion lines* - first found by solving for the copunctual points.
 
 ...
+
+## Color model
