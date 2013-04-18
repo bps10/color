@@ -62,22 +62,22 @@ class colorModel():
                 self.findConeRatios(fracLvM=(i / 100.))
                 self.genThirdStage()
                 temp = self.returnThirdStage()
-                RG = temp['lCenter']
-                BY = temp['mCenter']
+                RG = temp['mCenter']
+                BY = temp['lCenter']
 
                 if i == 0:
                     uniqueGreen.append(555)
                     uniqueRed.append(592)
                 else:
-                    zero_cross = np.where(np.diff(np.sign(RG)))[0]
+                    zero_cross = np.where(np.diff(np.sign(BY)))[0]
                     uniqueGreen.append(lambdas[zero_cross[0]])
-                    uniqueRed.append(lambdas[np.argmin(RG)])
+                    uniqueRed.append(lambdas[np.argmin(BY)])
 
                 if i == 100:
                     uniqueBlue.append(474)
                     uniqueYellow.append(575)
                 else:
-                    zero_cross = np.where(np.diff(np.sign(BY)))[0]
+                    zero_cross = np.where(np.diff(np.sign(RG)))[0]
                     uniqueBlue.append(lambdas[zero_cross[0]])
                     try:
                         uniqueYellow.append(lambdas[zero_cross[1]])
@@ -366,6 +366,8 @@ def LMratiosAnalysis(Volbrecht1997=False, returnVals=False,
         ax2.set_ylabel('proportion')
         ax2.set_xlabel('unique green (nm)')
         ax2.set_xlim([490, 560])
+        ax3.set_xlim([514, 590])
+        ax4.set_xlim([460, 536])
         if Volbrecht1997:
             ax2.set_ylim([-0.002, max(max(freqV), max(freqGreen)) + 0.01])
         else:
@@ -383,12 +385,12 @@ def LMratiosAnalysis(Volbrecht1997=False, returnVals=False,
         ax3.set_xlabel('unique blue, yellow (nm)')
 
         #ax4.spines['bottom'].set_visible(True)
-        #ax3.spines['bottom'].set_visible(True)      
+        ax3.spines['bottom'].set_visible(False)
         #ax4.set_visible(True)
         ax3.edgecolor  = 'y'
         plt.tight_layout()
         
-        firsthalf = '../../bps10.github.com/presentations/static/figures/'
+        firsthalf = '../bps10.github.com/presentations/static/figures/'
         secondhalf = 'colorModel/uniqueHues_LMcomparison.png'
         if Volbrecht1997:
             secondhalf = 'colorModel/uniqueHues_LMcomparison_Volbrecht.png'
@@ -404,7 +406,7 @@ def LMratiosAnalysis(Volbrecht1997=False, returnVals=False,
         
 
 def plotModel(plotSpecSens=False, plotCurveFamily=False,
-              plotUniqueHues=False, savefigs=False, fracLvM=0.75):
+              plotUniqueHues=False, savefigs=False, fracLvM=0.25):
     """Plot cone spectral sensitivies and first stage predictions.
     """
     
@@ -434,7 +436,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
         
         plt.tight_layout()
         if savefigs:
-            firsthalf = '../../bps10.github.com/presentations/static/figures/'
+            firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/specSens.png'
             plt.savefig(firsthalf + secondhalf)
         plt.show()
@@ -475,9 +477,9 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
                 if SecondStage['percent'][i]['probSurround'] >= thresh:
                     print SecondStage['percent'][i]
                     ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
-                            c=(0,0,1), linewidth=1, alpha=0.25)
-                    ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
                             c=(1,0,0), linewidth=1, alpha=0.25)
+                    ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                            c=(0,0,1), linewidth=1, alpha=0.25)
                 else:
                     ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
                             c=(0,0,0), linewidth=1, alpha=0.10)
@@ -496,7 +498,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
         
         plt.tight_layout()
         if savefigs:
-            firsthalf = '../../bps10.github.com/presentations/static/figures/'
+            firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/familyLMS_' + str(int(
                                                 fracLvM * 100)) + 'L.png'
             plt.savefig(firsthalf + secondhalf)
@@ -515,15 +517,15 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
     ax1.plot(FirstStage['lambdas'], 
              np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
     ax1.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-            'r', linewidth=3)
-    ax1.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
             'b', linewidth=3)
+    ax1.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+            'r', linewidth=3)
     ax1.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
     ax1.set_ylabel('activity')
     ax1.yaxis.set_label_coords(-0.2, 0.5)
     ax1.set_ylim([-0.20, 0.21])
-    ax1.text(0.95, 0.95, '25% L', fontsize=16, 
+    ax1.text(0.95, 0.95, '25% L', fontsize=16,
         horizontalalignment='right',
         verticalalignment='top',
         transform=ax1.transAxes)
@@ -536,9 +538,9 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
     ax2.plot(FirstStage['lambdas'], 
              np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
     ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-            'r', linewidth=3)
-    ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
             'b', linewidth=3)
+    ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+            'r', linewidth=3)
     ax2.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
     ax2.set_ylabel('activity')
@@ -558,9 +560,9 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
     ax3.plot(FirstStage['lambdas'], 
              np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
     ax3.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-            'r', linewidth=3)
-    ax3.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
             'b', linewidth=3)
+    ax3.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+            'r', linewidth=3)
     ax3.set_xlim([FirstStage['wavelen']['startWave'],
                      FirstStage['wavelen']['endWave']])
     ax3.set_ylabel('activity')
@@ -574,7 +576,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
     
     plt.tight_layout()
     if savefigs:
-        firsthalf = '../../bps10.github.com/presentations/static/figures/'
+        firsthalf = '../bps10.github.com/presentations/static/figures/'
         secondhalf = 'colorModel/PercentL.png'
         plt.savefig(firsthalf + secondhalf)
         
@@ -602,7 +604,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
 
         plt.tight_layout()
         if savefigs:
-            firsthalf = '../../bps10.github.com/presentations/static/figures/'
+            firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/uniqueHues.png'
             plt.savefig(firsthalf + secondhalf)
         plt.show()
@@ -611,5 +613,5 @@ if __name__ == '__main__':
     #optimizeUniqueHues()
     #color = colorModel()
     LMratiosAnalysis(Volbrecht1997=True)
-    #plotModel(plotSpecSens=False, plotCurveFamily=False, 
-    #          plotUniqueHues=False, savefigs=True)
+    #plotModel(plotSpecSens=False, plotCurveFamily=True,
+    #          plotUniqueHues=False, savefigs=False)
