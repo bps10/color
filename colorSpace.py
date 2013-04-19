@@ -841,7 +841,7 @@ class colorSpace(object):
         
         plt.show()
             
-    def plotConfusionLines(self, deficit='protan'):
+    def plotConfusionLines(self, deficit='tritan', clip=True):
         '''add confusion lines
             '''
         
@@ -865,10 +865,13 @@ class colorSpace(object):
                             'k-', linewidth=1)   
         
         self.cs_ax.text(0.7, 1, deficit, fontsize=18)
+        if clip is True:                
+            self.cs_ax.set_xlim([-0.4, 1.2])
+            self.cs_ax.set_ylim([-0.2, 1.2])
         plt.show()                 
 
     def _plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
-                        invert=False, Luv=False, skipLam=None):
+                        invert=False, Luv=False, skipLam=None, color=True):
         '''
         '''      
         try:
@@ -926,20 +929,12 @@ class colorSpace(object):
         #rgb = np.reshape([self.Lnorm,self.Mnorm,self.Snorm], 
               #           [len(self.Lnorm) / 2, len(self.Lnorm) / 2, 3])
 
-        import matplotlib.patches as patch
-        rgb = np.random.random((100,100))
-        print rgb.shape
-        im = plt.imshow(rgb, origin='lower', 
-                interpolation='spline36',
-                extent=([-1, 1, -1, 1]))
-        path = patch.Path(list(zip(self.rVal, self.gVal)))
-        p = patch.PathPatch(path, facecolor='none')
-        im.set_clip_path(p)
-        #self.cs_ax.add_patch(p)
-        #scaled_z = (z - z.min()) / z.ptp()
-        #colors = plt.cm.coolwarm(scaled_z)
+        if color:
+            import clip as clip
+            rgb = clip.clip_rgb_color(
+                                np.array([self.rVal, self.gVal, self.bVal]))
+            clip.rgb_patch_plot(self.cs_ax, rgb[0], color_names=None)
         
-        #plt.scatter(x, y, marker='+', edgecolors=colors, s=150, linewidths=4)
 
         
         # annotate plot
