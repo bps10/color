@@ -277,8 +277,8 @@ def optimizeUniqueHues():
     np.savetxt('errors.txt', np.array([parameter, error]).T, delimiter='\t')
 
 
-def LMratiosAnalysis(Volbrecht1997=False, returnVals=False, 
-                        plot=True, savefigs=False):
+def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
+                        plot=True, savefigs=True):
     '''Creates a dictionary like object.
     '''
     carroll = np.genfromtxt('static/data/Carroll2002_lmRatios.txt', 
@@ -327,6 +327,7 @@ def LMratiosAnalysis(Volbrecht1997=False, returnVals=False,
         ax4 = ax3.twiny()
         
         pf.AxisFormat()
+        plt.rc('legend',**{'fontsize': 12})
         pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[5, 5])
         pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
         pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 5])
@@ -395,7 +396,7 @@ def LMratiosAnalysis(Volbrecht1997=False, returnVals=False,
         if Volbrecht1997:
             secondhalf = 'colorModel/uniqueHues_LMcomparison_Volbrecht.png'
             ax2.legend()
-            plt.rc('legend',**{'fontsize': 12})
+            
         if savefigs:
             plt.savefig(firsthalf + secondhalf)
         plt.show()

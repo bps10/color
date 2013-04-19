@@ -296,7 +296,7 @@ class colorSpace(object):
             return neutPoint, [r, g]
         else:
             return neutPoint
-            
+
     def EE_CMFtoRGB(self):
         '''
         '''
@@ -588,26 +588,24 @@ class colorSpace(object):
         u = u[ind1:ind2]
         v = v[ind1:ind2]
         
-        self._plotColorSpace(u, v, spectrum, ee=False)
+        self._plotColorSpace(u, v, spectrum, ee=False, Luv=True, 
+                             skipLam=[530, 550])
         self.cs_ax.axes.get_xaxis().set_visible(False)
         self.cs_ax.axes.get_yaxis().set_visible(False)
         plt.axis('off')
         plt.show()
 
-    def plotKaiser(self, neitz=False, confusion=None):
+    def plotKaiser(self, neitz=False, showBY=True, clip=True,
+                   showSub1=False, showSub2=True):
         '''
         
         '''
-        try:
-            from matplotlib.patches import Wedge
-        except ImportError:
-            raise ImportError('Sorry no patches module found')
             
         sub1_Neitz, sub2_Neitz, jv = self.genKaiser(neitz)
 
         if neitz:
             self._plotColorSpace()
-            confusion = False
+
         else:
             self._plotColorSpace(rVal=jv[:, 0], gVal=jv[:, 1],
                                  spec=self.spectrum)
@@ -615,66 +613,91 @@ class colorSpace(object):
                             [jv[-1, 1], jv[0, 1]], 'k-', linewidth=3)
             self.cs_ax.set_ylim([0, 0.9])
             self.cs_ax.set_xlim([-0.05, 0.8])
-            if not confusion:
-                confusion = True
-            
-        self.cs_ax.plot(sub1_Neitz[:, 0], sub1_Neitz[:, 1], 'rx', 
-                        markersize=8, linewidth=2)
-        self.cs_ax.plot(sub2_Neitz[:, 0], sub2_Neitz[:, 1], 'bx',
-                        markersize=8, linewidth=2)
+        if showSub1:     
+            self.cs_ax.plot(sub1_Neitz[:, 0], sub1_Neitz[:, 1], 'ko', 
+                            markersize=8, markeredgewidth=2,
+                            markerfacecolor='w',
+                            linewidth=2)
+        if showSub2:
+            self.cs_ax.plot(sub2_Neitz[:, 0], sub2_Neitz[:, 1], 'kx',
+                            markersize=8, markeredgewidth=2, linewidth=2)
 
+        if showBY:
+            neut, RG = self.BY2lambda(0, 1., True)
+            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
+                            '-o', c=(0, 1, 0), markersize=8, linewidth=2)  
+            neut, RG = self.BY2lambda(1, 0, True)
+            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
+                            '-o', c=(0, 0, 1), markersize=8, linewidth=2)  
+            neut, RG = self.lambda2BY(520, True)
+            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
+                            '-o', c=(0, 0.5, 0.5),
+                            markersize=8, linewidth=2)  
+
+        if clip is True:                
+            self.cs_ax.set_xlim([-0.4, 1.2])
+            self.cs_ax.set_ylim([-0.2, 1.2])
+        
         self.cs_ax.set_xlabel('x', fontsize=10)
         self.cs_ax.set_ylabel('y', fontsize=10)
         
         plt.tight_layout()
         plt.show()
-        
-        if confusion:
-            ## plot confusion lines
-            clip_area = Wedge((jv[0, 0], jv[0, 1]), r=10, theta1=0, theta2=360)
-            CIEcopunctuals = {'deutan': np.array([1.10, -0.1, 0.1]),
-                              'protan': np.array([0.753, 0.247, 0]), 
-                              'tritan': np.array([0.17, 0, 0.83]),
-                              }
-            for deficit in CIEcopunctuals:
-                self._plotColorSpace(rVal=jv[:, 0], gVal=jv[:, 1],
-                                         spec=self.spectrum)     
+
+    def plotCIE(self):
+        '''
+        '''        
+        try:
+            from matplotlib.patches import Wedge
+        except ImportError:
+            raise ImportError('Sorry no patches module found')
+            
+        sub1_Neitz, sub2_Neitz, jv = self.genKaiser()
+        ## plot confusion lines
+        clip_area = Wedge((jv[0, 0], jv[0, 1]), r=10, theta1=0, theta2=360)
+        CIEcopunctuals = {'deutan': np.array([1.10, -0.1, 0.1]),
+                          'protan': np.array([0.753, 0.247, 0]), 
+                          'tritan': np.array([0.17, 0, 0.83]),
+                          }
+        for deficit in CIEcopunctuals:
+            self._plotColorSpace(rVal=jv[:, 0], gVal=jv[:, 1],
+                                     spec=self.spectrum)     
+            
+            print deficit, ': ', CIEcopunctuals[deficit]
+            
+            if deficit.lower() == 'deutan' or deficit.lower() == 'protan':
+                lambdas = [420, 460, 470, 480, 490, 500, 515,]
+            elif deficit.lower() == 'tritan':
+                lambdas = [420, 460, 480, 500, 520, 535, 545, 555,
+                           570, 585, 600, 625, 700]
+            
+            self.cs_ax.plot(CIEcopunctuals[deficit][0],
+                            CIEcopunctuals[deficit][1], 'ko', markersize=8)
+            for lam in lambdas:
+                R, G, B = jv[:, 0], jv[:, 1], jv[:, 2]
+                self.cs_ax.plot([self.find_testLightMatch(lam, 
+                                    R, G, B)[0],
+                                 CIEcopunctuals[deficit][0]],
+
+                                [self.find_testLightMatch(lam, 
+                                    R, G, B)[1],
+                                 CIEcopunctuals[deficit][1]],
+                                'k-', linewidth=1) 
+                self.cs_ax.plot([jv[-1, 0], jv[0, 0]], 
+                        [jv[-1, 1], jv[0, 1]], 'k-', linewidth=3)
+                        
+                self.cs_ax.set_clip_path(clip_area)
                 
-                print deficit, ': ', CIEcopunctuals[deficit]
-                
-                if deficit.lower() == 'deutan' or deficit.lower() == 'protan':
-                    lambdas = [420, 460, 470, 480, 490, 500, 515,]
-                elif deficit.lower() == 'tritan':
-                    lambdas = [420, 460, 480, 500, 520, 535, 545, 555,
-                               570, 585, 600, 625, 700]
-                
-                self.cs_ax.plot(CIEcopunctuals[deficit][0],
-                                CIEcopunctuals[deficit][1], 'ko', markersize=8)
-                for lam in lambdas:
-                    R, G, B = jv[:, 0], jv[:, 1], jv[:, 2]
-                    self.cs_ax.plot([self.find_testLightMatch(lam, 
-                                        R, G, B)[0],
-                                     CIEcopunctuals[deficit][0]],
-    
-                                    [self.find_testLightMatch(lam, 
-                                        R, G, B)[1],
-                                     CIEcopunctuals[deficit][1]],
-                                    'k-', linewidth=1) 
-                    self.cs_ax.plot([jv[-1, 0], jv[0, 0]], 
-                            [jv[-1, 1], jv[0, 1]], 'k-', linewidth=3)
-                            
-                    self.cs_ax.set_clip_path(clip_area)
-                    
-                self.cs_ax.set_ylim([-0.12, 0.9])
-                self.cs_ax.set_xlim([-0.05, 1.15])          
-                self.cs_ax.set_xlabel('x', fontsize=10)
-                self.cs_ax.set_ylabel('y', fontsize=10)
-                self.cs_ax.text(0.8, 1, deficit, fontsize=18,
-                                horizontalalignment='right',
-                                verticalalignment='top',
-                                transform=self.cs_ax.transAxes)
-                plt.tight_layout()
-                plt.show()        
+            self.cs_ax.set_ylim([-0.12, 0.9])
+            self.cs_ax.set_xlim([-0.05, 1.15])          
+            self.cs_ax.set_xlabel('x', fontsize=10)
+            self.cs_ax.set_ylabel('y', fontsize=10)
+            self.cs_ax.text(0.8, 1, deficit, fontsize=18,
+                            horizontalalignment='right',
+                            verticalalignment='top',
+                            transform=self.cs_ax.transAxes)
+            plt.tight_layout()
+            plt.show()        
                 
     def plotCompare(self, compare=['stockman', 'stockSpecSens', 'neitz']):
         '''
@@ -845,7 +868,7 @@ class colorSpace(object):
         plt.show()                 
 
     def _plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
-                        invert=True):
+                        invert=False, Luv=False, skipLam=None):
         '''
         '''      
         try:
@@ -854,6 +877,8 @@ class colorSpace(object):
             import matplotlib.pylab as plt
         
         downSamp = 10
+        minLam = 460
+        maxLam = 630
         
         if rVal == None or gVal == None or spec == None:
             rVal = self.rVal
@@ -863,7 +888,13 @@ class colorSpace(object):
             JuddV = False
             offset = 0.02
             turn = [500, 510]
-            
+        
+        elif Luv:
+            JuddV = False
+            offset = 0.015
+            turn = [500, 510]
+            minLam = 420
+            maxLam = 630            
         else:
             JuddV = True
             offset = 0.01
@@ -894,27 +925,29 @@ class colorSpace(object):
         
         #rgb = np.reshape([self.Lnorm,self.Mnorm,self.Snorm], 
               #           [len(self.Lnorm) / 2, len(self.Lnorm) / 2, 3])
-        '''
+
         import matplotlib.patches as patch
         rgb = np.random.random((100,100))
         print rgb.shape
         im = plt.imshow(rgb, origin='lower', 
                 interpolation='spline36',
-                extent=([-2, 2, -2, 2]))
+                extent=([-1, 1, -1, 1]))
         path = patch.Path(list(zip(self.rVal, self.gVal)))
         p = patch.PathPatch(path, facecolor='none')
         im.set_clip_path(p)
         #self.cs_ax.add_patch(p)
-        scaled_z = (z - z.min()) / z.ptp()
-        colors = plt.cm.coolwarm(scaled_z)
+        #scaled_z = (z - z.min()) / z.ptp()
+        #colors = plt.cm.coolwarm(scaled_z)
         
-        plt.scatter(x, y, marker='+', edgecolors=colors, s=150, linewidths=4)
-        '''
+        #plt.scatter(x, y, marker='+', edgecolors=colors, s=150, linewidths=4)
+
+        
         # annotate plot
         dat = zip(spec[::downSamp], rVal[::downSamp], gVal[::downSamp])
 
         for text, X, Y in dat:
-            if text > 460 and text < 630:
+            if text > minLam and text < maxLam and not np.any(
+                                        text == np.asarray(skipLam)):
                 
                 if text <= turn[0]:
                     self.cs_ax.scatter(X - offset, Y, marker='_', s=150, c='k')
@@ -965,11 +998,11 @@ if __name__ == '__main__':
     #color.plotSpecSens()
     #color.plotCMFs()
     #color.plotcoeff()
-    #color.plotColorSpace()
+    color.plotColorSpace()
     #color.plotConfusionLines()
     #color.plotBYsystem(PRINT=True)
-    color.plotKaiser(neitz=True)
+    #color.plotKaiser(neitz=True)
     #color.trichromaticAnalysis()
     #color.tetrachromaticAnalysis()
     #color.plotConeSpace()
-    color.plotLUV()
+    #color.plotLUV()
