@@ -278,7 +278,7 @@ def optimizeUniqueHues():
 
 
 def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
-                        plot=True, savefigs=True):
+                        plot=True, savefigs=False):
     '''Creates a dictionary like object.
     '''
     carroll = np.genfromtxt('static/data/Carroll2002_lmRatios.txt', 
@@ -303,7 +303,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     print 'yellow: ', np.mean(yellow), np.std(yellow)
     print 'blue: ', np.mean(blue), np.std(blue)   
                        
-    BINS = np.arange(0, 101, 5)
+    BINS = np.arange(0, 101, 6)
     if Volbrecht1997:
         BINS_G = np.arange(488, 564, 3)
         volb = np.genfromtxt('static/data/Volbrecht1997.txt', delimiter='\t',
@@ -613,6 +613,6 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
 if __name__ == '__main__':
     #optimizeUniqueHues()
     #color = colorModel()
-    LMratiosAnalysis(Volbrecht1997=True)
+    LMratiosAnalysis(Volbrecht1997=False)
     #plotModel(plotSpecSens=False, plotCurveFamily=True,
     #          plotUniqueHues=False, savefigs=False)

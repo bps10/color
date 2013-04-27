@@ -27,7 +27,7 @@ td,th,tr {
   top: 30px;
   left: 40px;
   font-weight: bold;
-  font-family: "Helvetica Neue";
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 40px;
   border-left: 2px solid black;
   padding-left: 20px;

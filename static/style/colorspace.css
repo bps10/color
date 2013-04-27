@@ -11,6 +11,7 @@ svg {
 
 
 .axis text {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font: 12px sans-serif;
 }
 
@@ -85,12 +86,14 @@ pre{
 
 
 .inputholder {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     position: absolute;
     left: 30px;
     top: 220px;
     font-size: 16px;
     border: 4px groove #aaa;
     padding: 20px;
+	
 }
 
 #dataTable {
