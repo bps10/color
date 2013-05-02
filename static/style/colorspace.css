@@ -34,6 +34,11 @@ select {
     outline-offset: -2px;
     }    
 
+li.selected {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+}
+
 div.textArea {
     width: 800px;
     position: absolute;

@@ -84,36 +84,48 @@ var svg = d3.select("body").append("svg")
 	///////////////////////
 	// Input control box //
 	///////////////////////
+    var fundamentals = ["Neitz", "Stockman"],
+        primaries = ["Wright", "CIE 1932", "Stiles and Burch"];
+
 	d3.select("body").append("span")
 		.attr("class", "inputholder");
 
-	d3.select(".inputholder").append("ul").attr("id","fundamentals")
-		.style("font-weight","bold")
-		.text("Fundamentals")
-	d3.select("#fundamentals").append("li")
-		.attr("value","fund_neitz")
-		.style("font-weight","normal")
-		.text("Neitz");
-	d3.select("#fundamentals")
-		.attr("value","fund_stockman")
-		.append("li")
-		.style("font-weight","normal")
-		.text("Stockman");
+    d3.select(".inputholder").append("span")
+        .attr("id", "fundamentals")
+        .text("fundamentals");
+    d3.select("#fundamentals")
+    .selectAll("li")
+    .data(fundamentals)
+    .enter()
+    .append("li")
+    //.attr("id", "fundamentals")
+    //.attr("id", function(d) {return "fund_" + d;})
+    .text(function(d) {return d;})
+    .classed("selected", function(d) { return d === "Neitz";})
+    .on("click", function(d) {
+        xAxis = d;
+        updateFund();
+        });
+    d3.select(".inputholder").append("br");
 
-	d3.select(".inputholder").append("ul")
-		.style("font-weight","bold")
-		.attr("id","primaries")
-		.text("Primaries")
-	d3.select("#primaries").append("li")
-		.style("font-weight","normal")
-		.text("Wright");
-	d3.select("#primaries").append("li")
-		.style("font-weight","normal")
-		.text("Stiles and Burch");
-	d3.select("#primaries").append("li")
-		.style("font-weight","normal")
-		.text("CIE 1932");
-	
+    d3.select(".inputholder").append("span")
+        .attr("id", "primaries")
+        .text("primaries");
+    d3.select("#primaries")
+    .selectAll("li")
+    .data(primaries)
+    .enter()
+    .append("li")
+    //.attr("id", "primaries")
+    //.attr("id", function(d) {return "prim_" + d;})
+    .text(function(d) {return d;})
+    .classed("selected", function(d) { return d === "Wright";})
+    .on("click", function(d) {
+        xAxis = d;
+        updatePrim();
+        });
+    d3.select(".inputholder").append("br");
+
 	// L cone peak
 	createSlider("inputholder", 559, "L");
 	
@@ -123,27 +135,25 @@ var svg = d3.select("body").append("svg")
 	// S cone peak
 	createSlider("inputholder", 417, "S");
 	
-	d3.select("#fundamentals").on("click", changeFund);
-	d3.select("#primaries").on("click", changePrim);
-    //d3.select("#stimParam").on("change", changeStim);
-    //d3.select("#fundamentals").on("change", changeFund);
     d3.select("#Lpeak").on("change", changeLpeak);
     d3.select("#Mpeak").on("change", changeMpeak);
     d3.select("#Speak").on("change", changeSpeak);
 
-	
-	
-    function changePrim() {
-        stim = this.value;
-		console.log(stim);
-        // post and then redraw w/ new values
-		// change class = selected
-    }
+    function updatePrim() {
+        console.log(xAxis);
+        d3.select("#primaries")
+        .selectAll("li")
+        .classed("selected", function(d) {
+                 return d === xAxis;
+                 });}
 
-    function changeFund() {
-        fundamental = this.value;
-		console.log(fundamental);
-	}
+    function updateFund() {
+        console.log(xAxis);
+        d3.select("#fundamentals")
+        .selectAll("li")
+        .classed("selected", function(d) {
+                 return d === xAxis;
+                 });}
 
     function changeLpeak() {
         Lpeak = this.value;
@@ -173,6 +183,7 @@ var svg = d3.select("body").append("svg")
         .style("color", color)
         .text(value + " nm");	
 	}
+
 	function createSlider(holder_name, value, coneType) {
 	
 		cone = coneType.toUpperCase();
@@ -199,33 +210,3 @@ var svg = d3.select("body").append("svg")
 			.text(value + " nm");
 		d3.select(".inputholder").append("br");	
 	}
-/*
-  // Build menus
-  d3.select('#x-axis-menu')
-    .selectAll('li')
-    .data(xAxisOptions)
-    .enter()
-    .append('li')
-    .text(function(d) {return d;})
-    .classed('selected', function(d) {
-      return d === xAxis;
-    })
-    .on('click', function(d) {
-      xAxis = d;
-      updateChart();
-      updateMenus();
-    });
-	
-  function updateMenus() {
-    d3.select('#x-axis-menu')
-      .selectAll('li')
-      .classed('selected', function(d) {
-        return d === xAxis;
-      });
-    d3.select('#y-axis-menu')
-      .selectAll('li')
-      .classed('selected', function(d) {
-        return d === yAxis;
-    });
-  }
-  */
