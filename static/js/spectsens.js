@@ -1,7 +1,6 @@
 
-
-function spectsens(LambdaMax=559, OpticalDensity=0.2, Output='log',
-                StartWavelength=380, EndWavelength=780, Res=1000) {
+function spectsens(lambdaMax, opticalDensity, output,
+                startWavelength, endWavelength, step) {
     /*This function returns a photopigment spectral sensitivity curve
     as defined by Carroll, McMahon, Neitz, and Neitz.
 
@@ -20,13 +19,13 @@ function spectsens(LambdaMax=559, OpticalDensity=0.2, Output='log',
     .. note::
        Ported from Jim K's Matlab function.
 	*/
-	if (arguments.length < 1) {LambdaMax = 559;}
-	if (arguments.length < 2) {OpticalDensity = 0.2;}
-	if (arguments.length < 3) {Output = 'log';}
-	if (arguments.length < 4) {StartWavelength = 380;}
-	if (arguments.length < 5) {EndWavelength = 780;}
-	if (arguments.length < 6) {Res = 1000;}
-		
+	typeof lambdaMax == "undefined" && (lambdaMax = 559);
+	typeof opticalDensity == "undefined" && (opticalDensity = 0.2);
+	typeof output == "undefined" && (output = 'log');
+	typeof startWavelength == "undefined" && (startWavelength = 390);
+	typeof endWavelength == "undefined" && (endWavelength = 750);
+	typeof step == "undefined" && (step = 1);
+	
     A_ = 0.417050601;
     B_ = 0.002072146;
     C_ = 0.000163888;
@@ -52,54 +51,294 @@ function spectsens(LambdaMax=559, OpticalDensity=0.2, Output='log',
     W_ = 0.001757315;
     X_ = 1.47344000E-05;
     Y_ = 1.51000000E-05;
-    Z_ = OpticalDensity; //+ 0.00000001;
+    Z_ = opticalDensity;
 
-    A2 = (log10(1.0 / LambdaMax) - log10(1.0 / 558.5));
+    A2 = (log10(1.0 / lambdaMax) - log10(1.0 / 558.5));
 
-    vector = log10(np.arange(StartWavelength,
-                    EndWavelength + Res, Res) ** -1.0);
+    vector = array_manip(array_pow(range(startWavelength,
+                    endWavelength, step), -1.0), log10);
 
     con = 1.0 / Math.sqrt(2.0 * Math.PI);
 
-    exTemp = (log10(-E_ + E_ * tanh(-1 * Math.pow(10.0, vector - A2) - F_) / G_)) + 
-				D_ + A_ * tanh((-1 * Math.pow(10.0, vector - A2) - B_) / C_) -
-				
-              (J_ / I_ * con * Math.pow(Math.E, -0.5 *
-              Math.pow((Math.pow(10.0, vector - A2) - H_) / I_, 2.0))) -
+    exTemp = (
+		array_add(array_add(array_add(array_subtract(array_subtract(array_subtract(array_add(
+			array_add(
+		
+		array_manip(array_add(array_multiply(array_manip(array_divide(
+			array_multiply(-1.0, array_subtract(array_pow(
+			10.0, array_subtract(vector, A2)), - F_)), G_), tanh), E_), -E_), log10), D_), 
 
-              (M_ / L_ * con * Math.pow(Math.E, -0.5 *
-              Math.pow((Math.pow(10.0, vector - A2) - K_) / L_, 2.0))) -
+		array_multiply(A_, array_manip(array_divide(array_multiply(-1, array_subtract(
+			array_pow(10.0, array_subtract(vector, A2)), B_)), C_), tanh))),
+			
+		array_multiply(J_ * I_ * con, array_pow(Math.E, array_multiply(array_pow(
+			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), H_), I_),
+			2.0), -0.5)))),
+			
+		array_multiply(M_ * L_ * con, array_pow(Math.E, array_multiply(array_pow(
+			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), K_), L_),
+			2.0), -0.5)))),
 
-              (P_ / O_ * con * Math.pow(Math.E, -0.5 *
-              Math.pow((Math.pow(10.0, vector - A2) - N_) / O_, 2.0))) +
+		array_multiply(P_ * O_ * con, array_pow(Math.E, array_multiply(array_pow(
+			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), N_), O_),
+			2.0), -0.5)))),
+			
+		array_multiply(S_ * R_ * con, array_pow(Math.E, array_multiply(array_pow(
+			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), Q_), R_),
+			2.0), -0.5)))),
+			
+		array_multiply(V_ * U_ * con, array_pow(Math.E, array_multiply(array_pow(
+			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), T_), U_),
+			2.0), -0.5)))),
 
-              (S_ / R_ * con * Math.pow(Math.E, -0.5 *
-              Math.pow((Math.pow(10.0, vector - A2) - Q_) / R_, 2.0))) +
-			  
-              (V_ / U_ * con * Math.pow(Math.E, -0.5 *
-              Math.pow((Math.pow(10.0, vector - A2) - T_) / U_, 2.0)) / 10.0) +
+		array_multiply(Y_ * Z_ * con, array_pow(Math.E, array_multiply(array_pow(
+			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), W_),X_),
+			2.0), -0.5))))
+		);
+					
+    ODTemp = array_manip(array_divide(array_subtract(1.0, array_pow(10.0, array_multiply(-1,array_multiply(array_pow(10.0, exTemp), Z_)))), (1.0 - Math.pow(10, -Z_))), log10);
 
-              (Y_ / X_ * con * Math.pow(Math.E, -0.5 *
-              Math.pow((Math.pow(10.0, vector - A2) - W_) / X_, 2.0)) / 100.0);
-			  
-    ODTemp = log10((1.0 - Math.pow(10.0, -1 * (Math.pow(10.0, exTemp) *
-                        Z_)) / (1.0 - Math.pow(10, -Z_)));
-
-    if Output.toLowerCase() === 'log' {
+    if (output.toLowerCase() === 'log') {
         extinction = exTemp;
         withOD = ODTemp;
 		}
     else {
-        extinction = Math.pow(10.0, exTemp);
-        withOD = Math.pow(10.0, ODTemp);
+        extinction = array_pow(10.0, exTemp);
+        withOD = array_pow(10.0, ODTemp);
 	}
     return withOD, extinction
 }
 
 function tanh (arg) {
-  return Math.exp(arg) - Math.exp(-arg)) / (Math.exp(arg) + Math.exp(-arg);
+  return (Math.exp(arg) - Math.exp(-arg)) / (Math.exp(arg) + Math.exp(-arg));
 }
 
 function log10(val) {
   return Math.log(val) / Math.LN10;
+}
+
+function array_add(term1, term2) {
+	var out_array = [],
+		typeofterm1 = typeof term1,
+		typeofterm2 = typeof term2;  
+
+	if (typeofterm1 != "object" && typeofterm2 != "object") {
+		throw TypeError("term1 or term2 must be an array object. Othewise use +");
+	}
+    if (typeofterm1 == "undefined" || typeofterm2 == "undefined") {
+        throw TypeError("Must pass term1 and term2 arguments.");	
+	}
+	if (typeofterm1 == "object" && typeofterm2 != "object") {
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] + term2);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		for (var i=0; i < term2.length; i++) {
+			out_array.push(term1 + term2[i]);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		if (term1.length != term2.length) {
+			throw TypeError("term1 must be same length as term2")
+		}
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] + term2[i]);
+		}
+	}		
+	return out_array;	
+}
+
+function array_subtract(term1, term2) {
+	var out_array = [],
+		typeofterm1 = typeof term1,
+		typeofterm2 = typeof term2;  
+
+	if (typeofterm1 != "object" && typeofterm2 != "object") {
+		throw TypeError("term1 or term2 must be an array object. Othewise use -");
+	}
+    if (typeofterm1 == "undefined" || typeofterm2 == "undefined") {
+        throw TypeError("Must pass term1 and term2 arguments.");	
+	}
+	if (typeofterm1 == "object" && typeofterm2 != "object") {
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] - term2);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		for (var i=0; i < term2.length; i++) {
+			out_array.push(term1 - term2[i]);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		if (term1.length != term2.length) {
+			throw TypeError("term1 must be same length as term2")
+		}
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] - term2[i]);
+		}
+	}		
+	return out_array;	
+}
+
+function array_multiply(term1, term2) {
+	var out_array = [],
+		typeofterm1 = typeof term1,
+		typeofterm2 = typeof term2;  
+
+	if (typeofterm1 != "object" && typeofterm2 != "object") {
+		throw TypeError("term1 or term2 must be an array object. Othewise use *");
+	}
+    if (typeofterm1 == "undefined" || typeofterm2 == "undefined") {
+        throw TypeError("Must pass term1 and term2 arguments.");	
+	}
+	if (typeofterm1 == "object" && typeofterm2 != "object") {
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] * term2);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		for (var i=0; i < term2.length; i++) {
+			out_array.push(term1 * term2[i]);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		if (term1.length != term2.length) {
+			throw TypeError("term1 must be same length as term2")
+		}
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] * term2[i]);
+		}
+	}		
+	return out_array;	
+}
+
+function array_divide(term1, term2) {
+	var out_array = [],
+		typeofterm1 = typeof term1,
+		typeofterm2 = typeof term2;  
+
+	if (typeofterm1 != "object" && typeofterm2 != "object") {
+		throw TypeError("term1 or term2 must be an array object. Othewise use /");
+	}
+    if (typeofterm1 == "undefined" || typeofterm2 == "undefined") {
+        throw TypeError("Must pass term1 and term2 arguments");	
+	}
+	if (typeofterm1 == "object" && typeofterm2 != "object") {
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] / term2);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		for (var i=0; i < term2.length; i++) {
+			out_array.push(term1 / term2[i]);
+		}
+	}
+	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+		if (term1.length != term2.length) {
+			throw TypeError("term1 must be same length as term2")
+		}
+		for (var i=0; i < term1.length; i++) {
+			out_array.push(term1[i] / term2[i]);
+		}
+	}		
+	return out_array;	
+}
+
+function array_manip(array, func) {
+	var out_array = [],
+		typeofarray = typeof array,
+		typeoffunc = typeof func;
+		
+	if (typeofarray != "object") {
+		throw TypeError("Array must be an object.");
+	}
+	if (typeoffunc != "function") {
+		throw TypeError("func must be a function.");
+	}
+	
+	for (var i=0; i < array.length; i++) {
+		out_array.push(func(array[i]));
+	}
+	return out_array;
+}
+
+function array_pow(base, exponent) {
+	var out_array = [],
+		typeofbase = typeof base,
+		typeofexponent = typeof exponent;
+		
+	if (typeofbase != "object" && typeofexponent != "object") {
+		throw TypeError("Base or exponent must be an array object. Othewise use Math.pow");
+	}
+	if (typeofbase == "object" && typeofexponent == "object") {
+		throw TypeError("Only base or exponent can by an array object");
+	}
+    if (typeofbase == "undefined" || typeofexponent == "undefined") {
+        throw TypeError("Must pass base and exponent arguments.");	
+	}
+	
+	if (typeofbase == "object") {
+		for (var i=0; i < base.length; i++) {
+			out_array.push(Math.pow(base[i], exponent));
+		}
+	}
+	else if (typeofexponent == "object") {
+		for (var i=0; i < exponent.length; i++) {
+			out_array.push(Math.pow(base, exponent[i]));
+		}
+	}
+	return out_array;
+}
+
+function range(start, end, step) {
+	/* from http://stackoverflow.com/questions/3895478/does-javascript-have-a-range-equivalent*/
+	
+    var range = [];
+    var typeofStart = typeof start;
+    var typeofEnd = typeof end;
+
+    if (step === 0) {
+        throw TypeError("Step cannot be zero.");
+    }
+
+    if (typeofStart == "undefined" || typeofEnd == "undefined") {
+        throw TypeError("Must pass start and end arguments.");
+    } else if (typeofStart != typeofEnd) {
+        throw TypeError("Start and end arguments must be of same type.");
+    }
+
+    typeof step == "undefined" && (step = 1);
+
+    if (end < start) {
+        step = -step;
+    }
+
+    if (typeofStart == "number") {
+
+        while (step > 0 ? end >= start : end <= start) {
+            range.push(start);
+            start += step;
+        }
+
+    } else if (typeofStart == "string") {
+
+        if (start.length != 1 || end.length != 1) {
+            throw TypeError("Only strings with one character are supported.");
+        }
+
+        start = start.charCodeAt(0);
+        end = end.charCodeAt(0);
+
+        while (step > 0 ? end >= start : end <= start) {
+            range.push(String.fromCharCode(start));
+            start += step;
+        }
+
+    } else {
+        throw TypeError("Only string and number types are supported");
+    }
+
+    return range;
+
 }
