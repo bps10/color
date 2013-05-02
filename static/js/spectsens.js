@@ -19,13 +19,14 @@ function spectsens(lambdaMax, opticalDensity, output,
     .. note::
        Ported from Jim K's Matlab function.
 	*/
-	typeof lambdaMax == "undefined" && (lambdaMax = 559);
-	typeof opticalDensity == "undefined" && (opticalDensity = 0.2);
-	typeof output == "undefined" && (output = 'log');
-	typeof startWavelength == "undefined" && (startWavelength = 390);
-	typeof endWavelength == "undefined" && (endWavelength = 750);
-	typeof step == "undefined" && (step = 1);
-	
+    console.log(arguments.length)
+	if (arguments.length < 1) {lambdaMax = 559;}
+	if (arguments.length < 2) {opticalDensity = 0.2;}
+	if (arguments.length < 3) {output = 'log';}
+	if (arguments.length < 4) {startWavelength = 390;}
+	if (arguments.length < 5) {endWavelength = 750;}
+	if (arguments.length < 6) {start = 1;}
+
     A_ = 0.417050601;
     B_ = 0.002072146;
     C_ = 0.000163888;
@@ -60,42 +61,40 @@ function spectsens(lambdaMax, opticalDensity, output,
 
     con = 1.0 / Math.sqrt(2.0 * Math.PI);
 
-    exTemp = (
-		array_add(array_add(array_add(array_subtract(array_subtract(array_subtract(array_add(
-			array_add(
-		
-		array_manip(array_add(array_multiply(array_manip(array_divide(
-			array_multiply(-1.0, array_subtract(array_pow(
-			10.0, array_subtract(vector, A2)), - F_)), G_), tanh), E_), -E_), log10), D_), 
+    part1 = array_add(array_manip(array_add(array_multiply(array_manip(array_divide(
+        array_multiply(-1.0, array_subtract(array_pow(
+        10.0, array_subtract(vector, A2)), F_)), G_), tanh), E_), -E_), log10), D_);
+    
+    part2 = array_multiply(A_, array_manip(array_divide(array_multiply(-1, array_subtract(
+        array_pow(10.0, array_subtract(vector, A2)), B_)), C_), tanh));
+        
+    part3 = array_multiply(J_ * I_ * con, array_pow(Math.E, array_multiply(array_pow(
+        array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), H_), I_),
+        2.0), -0.5)));
+        
+    part4 = array_multiply(M_ * L_ * con, array_pow(Math.E, array_multiply(array_pow(
+        array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), K_), L_),
+        2.0), -0.5)));
 
-		array_multiply(A_, array_manip(array_divide(array_multiply(-1, array_subtract(
-			array_pow(10.0, array_subtract(vector, A2)), B_)), C_), tanh))),
-			
-		array_multiply(J_ * I_ * con, array_pow(Math.E, array_multiply(array_pow(
-			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), H_), I_),
-			2.0), -0.5)))),
-			
-		array_multiply(M_ * L_ * con, array_pow(Math.E, array_multiply(array_pow(
-			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), K_), L_),
-			2.0), -0.5)))),
+    part5 = array_multiply(P_ * O_ * con, array_pow(Math.E, array_multiply(array_pow(
+        array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), N_), O_),
+        2.0), -0.5)));
+        
+    part6 = array_multiply(S_ * R_ * con, array_pow(Math.E, array_multiply(array_pow(
+        array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), Q_), R_),
+        2.0), -0.5)));
+        
+    part7 = array_multiply(V_ * U_ * con, array_pow(Math.E, array_multiply(array_pow(
+        array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), T_), U_),
+        2.0), -0.5)));
 
-		array_multiply(P_ * O_ * con, array_pow(Math.E, array_multiply(array_pow(
-			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), N_), O_),
-			2.0), -0.5)))),
-			
-		array_multiply(S_ * R_ * con, array_pow(Math.E, array_multiply(array_pow(
-			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), Q_), R_),
-			2.0), -0.5)))),
-			
-		array_multiply(V_ * U_ * con, array_pow(Math.E, array_multiply(array_pow(
-			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), T_), U_),
-			2.0), -0.5)))),
-
-		array_multiply(Y_ * Z_ * con, array_pow(Math.E, array_multiply(array_pow(
-			array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), W_),X_),
-			2.0), -0.5))))
-		);
-					
+    part8 = array_multiply(Y_ * Z_ * con, array_pow(Math.E, array_multiply(array_pow(
+        array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), W_),X_),
+        2.0), -0.5)));
+    exTemp = part8;
+    
+    exTemp = (array_add(array_add(array_add(array_subtract(array_subtract(array_subtract(array_add(part1, part2), part3), part4), part5), part6), part7), part8));
+    
     ODTemp = array_manip(array_divide(array_subtract(1.0, array_pow(10.0, array_multiply(-1,array_multiply(array_pow(10.0, exTemp), Z_)))), (1.0 - Math.pow(10, -Z_))), log10);
 
     if (output.toLowerCase() === 'log') {
@@ -138,7 +137,7 @@ function array_add(term1, term2) {
 			out_array.push(term1 + term2[i]);
 		}
 	}
-	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+	else if (typeofterm1 == "object" && typeofterm2 == "object") {
 		if (term1.length != term2.length) {
 			throw TypeError("term1 must be same length as term2")
 		}
@@ -170,7 +169,7 @@ function array_subtract(term1, term2) {
 			out_array.push(term1 - term2[i]);
 		}
 	}
-	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+	else if (typeofterm1 == "object" && typeofterm2 == "object") {
 		if (term1.length != term2.length) {
 			throw TypeError("term1 must be same length as term2")
 		}
