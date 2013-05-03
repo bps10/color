@@ -54,23 +54,31 @@ function spectsens(lambdaMax, opticalDensity, output,
     Z_ = opticalDensity;
 
     A2 = (log10(1.0 / lambdaMax) - log10(1.0 / 558.5));
-
+	
     vector = array_manip(array_pow(range(startWavelength,
                     endWavelength, step), -1.0), log10);
 
     con = 1.0 / Math.sqrt(2.0 * Math.PI);
 
-    part1 = array_add(array_manip(array_add(array_multiply(array_manip(array_divide(
+	//np.log10(-E + (E * np.tanh(-(10.0 ** (vector - A2) - F) / G))) + D
+
+	part1 = array_add(array_manip(array_add(-E_, array_multiply(E_, array_manip(array_divide(
+		array_multiply(-1.0, array_subtract(array_pow(10.0, array_subtract(
+		vector, A2)), F_)), G_), tanh))), log10), D_);
+	
+    /*part1 = array_add(array_manip(array_add(array_multiply(array_manip(array_divide(
         array_multiply(-1.0, array_subtract(array_pow(
-        10.0, array_subtract(vector, A2)), F_)), G_), tanh), E_), -E_), log10), D_);
-    
+        10.0, array_subtract(vector, A2)), F_)), G_), tanh), E_), -E_), log10), D_);*/
+		
+    console.log(part1);
+	
     part2 = array_multiply(A_, array_manip(array_divide(array_multiply(-1, array_subtract(
         array_pow(10.0, array_subtract(vector, A2)), B_)), C_), tanh));
-        
+       
     part3 = array_multiply(J_ * I_ * con, array_pow(Math.E, array_multiply(array_pow(
         array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), H_), I_),
         2.0), -0.5)));
-        
+  
     part4 = array_multiply(M_ * L_ * con, array_pow(Math.E, array_multiply(array_pow(
         array_divide(array_subtract(array_pow(10.0, array_subtract(vector, A2)), K_), L_),
         2.0), -0.5)));
@@ -200,7 +208,7 @@ function array_multiply(term1, term2) {
 			out_array.push(term1 * term2[i]);
 		}
 	}
-	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+	else if (typeofterm1 == "object" && typeofterm2 == "object") {
 		if (term1.length != term2.length) {
 			throw TypeError("term1 must be same length as term2")
 		}
@@ -232,7 +240,7 @@ function array_divide(term1, term2) {
 			out_array.push(term1 / term2[i]);
 		}
 	}
-	else if (typeofterm1 != "object" && typeofterm2 == "object") {
+	else if (typeofterm1 == "object" && typeofterm2 == "object") {
 		if (term1.length != term2.length) {
 			throw TypeError("term1 must be same length as term2")
 		}
