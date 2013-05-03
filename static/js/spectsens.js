@@ -19,7 +19,6 @@ function spectsens(lambdaMax, opticalDensity, output,
     .. note::
        Ported from Jim K's Matlab function.
 	*/
-    console.log(arguments.length)
 	if (arguments.length < 1) {lambdaMax = 559;}
 	if (arguments.length < 2) {opticalDensity = 0.2;}
 	if (arguments.length < 3) {output = 'log';}
