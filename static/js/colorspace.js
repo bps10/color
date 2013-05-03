@@ -1,212 +1,202 @@
 
-// dimensions //
-var margin = {top: 70, right: 20, bottom: 30, left: 40},
-    width = 800 - margin.left - margin.right,
-    height = 450 - margin.top - margin.bottom,
-    xaxisWidth = 440, yaxisWidth = 340;
-
-
-// scales //
-var x1 = d3.scale.linear()
-    .range([0, xaxisWidth]);
-
-var y1 = d3.scale.linear()
-    .range([yaxisWidth, 0]);
-
-// axes handles //	
-var xAxis = d3.svg.axis()
-    .scale(x1)
-    .ticks(6)
-    .orient("bottom");
-
-var yAxis = d3.svg.axis()
-    .scale(y1)
-    .ticks(5)
-    .orient("left");
-
-
-var line = d3.svg.line()
-	.x(function(d) { return x1(d.x); })
-	.y(function(d) { return y1(d.y); });
-
-
-function dataFormatter(x,y) {
-    var dat = []
-    for (var i=0; i<x.length; i++) {
-        dat.push({"x": x[i], "y": y[i]});
-        };
-    return dat
-};
-
-var x = [0.1,0.2,0.3,0.4,0.5], 
-	y = [0.5,0.4,0.3,0.2,0.1];
-var data = dataFormatter(x, y);
-
-var svg = d3.select("body").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-	x1.domain([-0.3, 1.2]);
-	y1.domain([-0.2, 1.2]);
-
-
-    // figure 1 lines //
-
-    svg.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(300," + (yaxisWidth - 60) + ")")
-    .call(xAxis)
-    .append("text")
-    .attr("y", 40)
-    .attr("x", 200)
-    .style("text-anchor", "beginning")
-    .text("r");
-
-
-    svg.append("g")
-    .attr("class", "y axis")
-    .attr("transform", "translate(388, -11)")
-    .call(yAxis)
-    .append("text")
-    .attr("transform", "rotate(-90)")
-    .attr("y", -40)
-    .attr("x", -150)
-    .text("g");
-
-    svg.append("path")
-    .datum(data)
-    .attr("transform", "translate(300, -11)")
-    .attr("class", "line")
-    .attr("d", line);
-
-	///////////////////////
-	// Input control box //
-	///////////////////////
-    var fundamentals = ["Neitz", "Stockman"],
-        primaries = ["Wright", "CIE 1932", "Stiles and Burch"];
-
-	d3.select("body").append("span")
-		.attr("class", "inputholder");
-
-    d3.select(".inputholder").append("span")
-        .attr("id", "fundamentals")
-        .text("fundamentals");
-    d3.select("#fundamentals")
-    .selectAll("li")
-    .data(fundamentals)
-    .enter()
-    .append("li")
-    //.attr("id", "fundamentals")
-    //.attr("id", function(d) {return "fund_" + d;})
-    .text(function(d) {return d;})
-    .classed("selected", function(d) { return d === "Neitz";})
-    .on("click", function(d) {
-        xAxis = d;
-        updateFund();
-        });
-    d3.select(".inputholder").append("br");
-
-    d3.select(".inputholder").append("span")
-        .attr("id", "primaries")
-        .text("primaries");
-    d3.select("#primaries")
-    .selectAll("li")
-    .data(primaries)
-    .enter()
-    .append("li")
-    //.attr("id", "primaries")
-    //.attr("id", function(d) {return "prim_" + d;})
-    .text(function(d) {return d;})
-    .classed("selected", function(d) { return d === "Wright";})
-    .on("click", function(d) {
-        xAxis = d;
-        updatePrim();
-        });
-    d3.select(".inputholder").append("br");
-
-	// L cone peak
-	createSlider("inputholder", 559, "L");
-	
-	// M cone peak
-	createSlider("inputholder", 530, "M");
-
-	// S cone peak
-	createSlider("inputholder", 417, "S");
-	
-    d3.select("#Lpeak").on("change", changeLpeak);
-    d3.select("#Mpeak").on("change", changeMpeak);
-    d3.select("#Speak").on("change", changeSpeak);
-
-    function updatePrim() {
-        console.log(xAxis);
-        d3.select("#primaries")
-        .selectAll("li")
-        .classed("selected", function(d) {
-                 return d === xAxis;
-                 });}
-
-    function updateFund() {
-        console.log(xAxis);
-        d3.select("#fundamentals")
-        .selectAll("li")
-        .classed("selected", function(d) {
-                 return d === xAxis;
-                 });}
-
-    function changeLpeak() {
-        Lpeak = this.value;
-        updateSlider(Lpeak, "L");
-    }
-
-    function changeMpeak() {
-        Mpeak = this.value;
-        updateSlider(Mpeak, "M");
-    }
-
-    function changeSpeak() {
-        Speak = this.value;       
-        updateSlider(Speak, "S");
-    }
-
-	function updateSlider(value, coneType) {
-		cone = coneType.toUpperCase();
-		if (cone === "S") {color = "blue";}
-		if (cone === "M") {color = "green";}
-		if (cone === "L") {color = "red";}
-		
-        d3.select("#" + cone + "peak_val").remove();
+var colorSpace = function() {
         
-        d3.select("#" + cone + "peak_text").append("span")
-        .attr("id", cone + "peak_val")
-        .style("color", color)
-        .text(value + " nm");	
-	}
-
-	function createSlider(holder_name, value, coneType) {
+	this.params = {'lights': stim.lower, }
+	this.setLights(stim)
+	this.genStockmanFilter()
+	this.genLMS(fundamental, LMSpeaks)
+	this.genConvMatrix()
 	
-		cone = coneType.toUpperCase();
-		if (cone === "S") {color = "blue";}
-		if (cone === "M") {color = "green";}
-		if (cone === "L") {color = "red";}
-		
-		// S cone peak
-		d3.select("." + holder_name)
-			.append("input")
-			.attr("id", cone + "peak")
-			.attr("type", "range")
-			.attr("min", 400)
-			.attr("max", 600)
-			.attr("step", 1)
-			.attr("value", value);
+	this.LMStoCMFs()
+	this.CMFtoEE_CMF()
+	this.EE_CMFtoRGB()
+        
+    function genLMS(fundamental, LMSpeaks) {
 
-		d3.select("." + holder_name).append("span")
-			.attr("id", cone + "peak_text")
-			.style("color", color)
-			.text(" " + cone + ": ")
-			.append("span")
-			.attr("id", cone + "peak_val")
-			.text(value + " nm");
-		d3.select(".inputholder").append("br");	
+        if (LMSpeaks.length != 3) {
+            print 'LMSpeaks must be length 3! Using defaults: 559, 530, 417nm'
+            LMSpeaks = [559.0, 530.0, 421.0]
+        }
+        if (fundamental.toLowerCase() == 'stockman') {
+            ind = this.spectrum.length
+            foo = np.genfromtxt(STATIC_ROOT + 
+                                    '/stockman/fundamentals2deg.csv', 
+                                 delimiter=',')[::10, :]
+            this.Lc = 10.0 ** foo[:ind, 1]
+            this.Mc = 10.0 ** foo[:ind, 2]
+            this.Sc = 10.0 ** foo[:ind, 3]
+    
+            Lresponse = this.Lc * this.spectrum
+            Mresponse = this.Mc * this.spectrum
+            Sresponse = this.Sc * this.spectrum
+        }
+        else if (fundamental.lower() == 'stockspecsens') {
+            ind = len(this.spectrum)
+            foo = np.genfromtxt(STATIC_ROOT + 
+                                    '/stockman/specSens.csv', 
+                                delimiter=',')[::10, :]
+
+            LS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 1]) *
+                    0.5)) / (1.0 - 10 ** -0.5))
+            MS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 2]) *
+                    0.5)) / (1.0 - 10 ** -0.5))
+            SS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 3]) *
+                    0.4)) / (1.0 - 10 ** -0.4))
+          
+            this.Lc = 10.0 ** LS[:ind]
+            this.Mc = 10.0 ** MS[:ind]
+            this.Sc = 10.0 ** SS[:ind]
+            
+            Lresponse = this.Lc / this.filters * this.spectrum
+            Mresponse = this.Mc / this.filters * this.spectrum
+            Sresponse = this.Sc / this.filters * this.spectrum
+        }    
+        else if (fundamental.lower() == 'neitz') {
+            minspec = min(this.spectrum)
+            maxspec = max(this.spectrum)
+            this.Lc = spectsens(LMSpeaks[0], 0.5, 'anti-log', minspec, 
+                                             maxspec, 1)[0]
+            this.Mc = spectsens(LMSpeaks[1], 0.5, 'anti-log', minspec, 
+                                             maxspec, 1)[0]
+            this.Sc = spectsens(LMSpeaks[2], 0.4, 'anti-log', minspec, 
+                                             maxspec, 1)[0]
+                                                         
+            Lresponse = this.Lc / this.filters * this.spectrum
+            Mresponse = this.Mc / this.filters * this.spectrum
+            Sresponse = this.Sc / this.filters * this.spectrum
+        }
+        #record param
+        this.params['fundamentals'] = fundamental
+        this.params['LMSpeaks'] = LMSpeaks
+        
+        this.Lnorm = Lresponse / np.max(Lresponse)
+        this.Mnorm = Mresponse / np.max(Mresponse)
+        this.Snorm = Sresponse / np.max(Sresponse)
 	}
+	
+    function genStockmanFilter(maxLambda=770) {
+
+        lens = np.genfromtxt(STATIC_ROOT + '/stockman/lens.csv', 
+                             delimiter=',')[::10, :]
+        macula = np.genfromtxt(STATIC_ROOT + 
+                                '/stockman/macular.csv', 
+                                delimiter=',')[::10, :]
+
+        spectrum = lens[:, 0]
+        ind = np.where(spectrum == maxLambda)[0]
+        this.spectrum = spectrum[:ind+1]
+        
+        this.filters = 10.0 ** (lens[:ind + 1, 1] +  macula[:ind + 1, 1])
+    }  
+	
+    function genConvMatrix(PRINT=False) {
+
+        this.convMatrix = np.array([
+            [np.interp(this.lights['l'], this.spectrum, this.Lnorm),
+            np.interp(this.lights['m'], this.spectrum, this.Lnorm),
+            np.interp(this.lights['s'], this.spectrum, this.Lnorm)],
+
+            [np.interp(this.lights['l'], this.spectrum, this.Mnorm),
+            np.interp(this.lights['m'], this.spectrum, this.Mnorm),
+            np.interp(this.lights['s'], this.spectrum, this.Mnorm)],
+
+            [np.interp(this.lights['l'], this.spectrum, this.Snorm),
+            np.interp(this.lights['m'], this.spectrum, this.Snorm),
+            np.interp(this.lights['s'], this.spectrum, this.Snorm)]])
+
+        if PRINT == True:
+            print this.convMatrix
+	}
+	
+    function setLights(stim) {
+
+        if (stim.toLowerCase() != 'wright' && stim.toLowerCase() != 'stiles and burch' 
+            && stim.toLowerCase() != 'cie 1931') {
+            throw TypeError('Sorry, stim light not understood, using wright')
+            stim = 'wright' 
+        }
+        if (stim.toLowerCase() == 'wright') {
+            this.lights = {
+                            'l': 650.0,
+                            'm': 530.0,
+                            's': 460.0,
+                            }
+		}
+        if (stim.toLowerCase() == 'stiles and burch') {
+            this.lights = {'l': 645.0, 
+                           'm': 526.0, 
+                           's': 444.0, }
+		}
+        if (stim.toLowerCase() == 'cie 1931') {
+            this.lights = {'l': 700.0, 
+                           'm': 546.1, 
+                           's': 435.8, }
+		}
+	}
+	
+    function TrichromaticEquation(r, g, b) {
+
+        rgb = r + g + b
+        r_ = r / rgb
+        g_ = g / rgb
+        b_ = b / rgb
+        
+        return r_, g_, b_
+    }
+	
+    function LMStoCMFs() {
+
+        
+        LMSsens = np.array([this.Lnorm, this.Mnorm, this.Snorm])
+        this.CMFs = np.dot(np.linalg.inv(this.convMatrix), LMSsens)
+
+        #save sums for later normalization:            
+        Rnorm = sum(this.CMFs[0, :])
+        Gnorm = sum(this.CMFs[1, :])
+        Bnorm = sum(this.CMFs[2, :])
+        this.EEfactors = {'r': Rnorm, 'g': Gnorm, 'b': Bnorm, }
+    }
+	
+    function CMFtoEE_CMF() {
+
+        this.CMFs[0, :], this.CMFs[1, :], this.CMFs[2, :] = this._EEcmf(
+                                        this.CMFs[0, :], 
+                                        this.CMFs[1, :], 
+                                        this.CMFs[2, :])
+
+	}
+	
+    function EE_CMFtoRGB() {
+
+        this.rVal, this.gVal, this.bVal = this.TrichromaticEquation(
+                            this.CMFs[0, :], this.CMFs[1, :], this.CMFs[2, :])
+	}
+	
+    function find_copunctuals() {
+
+        protan = this.find_rgb(np.array([1, 0, 0]))
+        deutan = this.find_rgb(np.array([0, 1, 0]))
+        tritan = this.find_rgb(np.array([0, 0, 1]))
+        
+        this.copunctuals = {'protan': protan, 
+                            'deutan': deutan, 
+                            'tritan': tritan, }
+	}
+        
+    function find_rgb(LMS) {
+
+        cmf = np.dot(np.linalg.inv(this.convMatrix), LMS)
+        cmf[0], cmf[1], cmf[2] = this._EEcmf(cmf[0], cmf[1], cmf[2])
+        out = this.TrichromaticEquation(cmf[0], cmf[1], cmf[2])
+        return out
+	}
+	
+    function _EEcmf(r_, g_, b_) {
+        
+        r_ *= 100. / this.EEfactors['r'] 
+        g_ *= 100. / this.EEfactors['g']
+        b_ *= 100. / this.EEfactors['b']
+        
+        return [r_, g_, b_]
+	}
+}
