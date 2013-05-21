@@ -1,17 +1,20 @@
+var colorSpace = (typeof exports === "undefined")?(function colorSpace() {}):(exports);
+if(typeof global !== "undefined") { global.colorSpace = colorSpace; }
 
-var colorSpace = function() {
-        
-	this.params = {'lights': stim.lower, }
-	this.setLights(stim)
-	this.genStockmanFilter()
-	this.genLMS(fundamental, LMSpeaks)
-	this.genConvMatrix()
+colorSpace.version = "1.2.6";
+
+    // 1. run
+	colorSpace.params = {'lights': stim.lower, }
+	colorSpace.setLights(stim)
+	colorSpace.genStockmanFilter()
+	colorSpace.genLMS(fundamental, LMSpeaks)
+	colorSpace.genConvMatrix()
 	
-	this.LMStoCMFs()
-	this.CMFtoEE_CMF()
-	this.EE_CMFtoRGB()
+	colorSpace.LMStoCMFs()
+	colorSpace.CMFtoEE_CMF()
+	colorSpace.EE_CMFtoRGB()
         
-    function genLMS(fundamental, LMSpeaks) {
+    colorSpace.genLMS = function genLMS(fundamental, LMSpeaks) {
 
         if (LMSpeaks.length != 3) {
             print 'LMSpeaks must be length 3! Using defaults: 559, 530, 417nm'
@@ -74,7 +77,7 @@ var colorSpace = function() {
         this.Snorm = Sresponse / np.max(Sresponse)
 	}
 	
-    function genStockmanFilter(maxLambda=770) {
+    colorSpace.genStockmanFilter =  function genStockmanFilter(maxLambda=770) {
 
         lens = np.genfromtxt(STATIC_ROOT + '/stockman/lens.csv', 
                              delimiter=',')[::10, :]
@@ -89,7 +92,7 @@ var colorSpace = function() {
         this.filters = 10.0 ** (lens[:ind + 1, 1] +  macula[:ind + 1, 1])
     }  
 	
-    function genConvMatrix(PRINT=False) {
+    colorSpace.genConvMatrix = function genConvMatrix(PRINT=False) {
 
         this.convMatrix = np.array([
             [np.interp(this.lights['l'], this.spectrum, this.Lnorm),
@@ -108,7 +111,7 @@ var colorSpace = function() {
             print this.convMatrix
 	}
 	
-    function setLights(stim) {
+    colorSpace.setLights = function setLights(stim) {
 
         if (stim.toLowerCase() != 'wright' && stim.toLowerCase() != 'stiles and burch' 
             && stim.toLowerCase() != 'cie 1931') {
@@ -134,7 +137,7 @@ var colorSpace = function() {
 		}
 	}
 	
-    function TrichromaticEquation(r, g, b) {
+    colorSpace.TrichromaticEquation = function TrichromaticEquation(r, g, b) {
 
         rgb = r + g + b
         r_ = r / rgb
@@ -144,7 +147,7 @@ var colorSpace = function() {
         return r_, g_, b_
     }
 	
-    function LMStoCMFs() {
+    colorSpace.LMStoCMFs = function LMStoCMFs() {
 
         
         LMSsens = np.array([this.Lnorm, this.Mnorm, this.Snorm])
@@ -157,7 +160,7 @@ var colorSpace = function() {
         this.EEfactors = {'r': Rnorm, 'g': Gnorm, 'b': Bnorm, }
     }
 	
-    function CMFtoEE_CMF() {
+    colorSpace.CMFtoEE_CMF = function CMFtoEE_CMF() {
 
         this.CMFs[0, :], this.CMFs[1, :], this.CMFs[2, :] = this._EEcmf(
                                         this.CMFs[0, :], 
@@ -166,13 +169,13 @@ var colorSpace = function() {
 
 	}
 	
-    function EE_CMFtoRGB() {
+    colorSpace.EE_CMFtoRGB = function EE_CMFtoRGB() {
 
         this.rVal, this.gVal, this.bVal = this.TrichromaticEquation(
                             this.CMFs[0, :], this.CMFs[1, :], this.CMFs[2, :])
 	}
 	
-    function find_copunctuals() {
+    colorSpace.find_copunctuals = function find_copunctuals() {
 
         protan = this.find_rgb(np.array([1, 0, 0]))
         deutan = this.find_rgb(np.array([0, 1, 0]))
@@ -183,7 +186,7 @@ var colorSpace = function() {
                             'tritan': tritan, }
 	}
         
-    function find_rgb(LMS) {
+    colorSpace.find_rgb = function find_rgb(LMS) {
 
         cmf = np.dot(np.linalg.inv(this.convMatrix), LMS)
         cmf[0], cmf[1], cmf[2] = this._EEcmf(cmf[0], cmf[1], cmf[2])
@@ -191,7 +194,7 @@ var colorSpace = function() {
         return out
 	}
 	
-    function _EEcmf(r_, g_, b_) {
+    colorSpace._EEcmf = function _EEcmf(r_, g_, b_) {
         
         r_ *= 100. / this.EEfactors['r'] 
         g_ *= 100. / this.EEfactors['g']
