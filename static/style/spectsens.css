@@ -1,0 +1,149 @@
+body {
+	width: 800px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+svg {
+  border: 1px solid #DEDEDE;
+  margin: 1em auto 8em auto;
+  top: 10px;
+}
+
+
+.axis text {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font: 16px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+select {
+    width: 100px;
+    left: 1px;
+    float: right;
+    height: 25px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: -2px;
+    }    
+
+li.selected {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: bold;
+}
+
+div.textArea {
+    width: 800px;
+    position: absolute;
+    top: 600px;
+    font-size: 16px;
+}
+    
+.bar {
+    fill: steelblue;
+    fill-opacity: .9;
+}
+
+.diff {
+    fill: none;
+    stroke: black;
+    stroke-width: 1.5px;
+}
+    
+.Lline {
+    fill: none;
+    stroke: red;
+    stroke-width: 3px;
+}
+.Mline {
+    fill: none;
+    stroke: green;
+    stroke-width: 3px;
+}
+.Sline {
+    fill: none;
+    stroke: blue;
+    stroke-width: 3px;
+}   
+span.textbox {
+    font-size: 18px;
+}
+
+pre{
+    display:block;
+    font-family:Georgia,Garamond,serif!important;
+    font-size:110%!important;
+    font-style:italic;
+    line-height:1.6em;
+    margin-left:1em;
+    border-left: 6px solid #ccc;
+    display: block;
+    padding: 0.5em;
+    color: #000;
+}
+
+#options {
+    position: absolute;
+    left: 50px;
+    top: 130px;
+    font-weight: bold;
+    font-size: 18px;
+}
+    
+
+
+.inputholder {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    position: absolute;
+    left: 30px;
+    top: 220px;
+    font-size: 16px;
+    border: 4px groove #aaa;
+    padding: 20px;
+	
+}
+
+#dataTable {
+    position: absolute;
+    top: 1630px;
+    left: 330px;
+    
+}
+    
+#schematicEye {
+    position: absolute;
+    left: 190px;
+    top: 170px;
+    height: 200px;
+    width: 215px;
+}
+
+#baboon {
+    position: absolute;
+    left: 40px;
+    top: 225px;
+    height: 100px;
+    width: 150px;
+}
+
+#runButton {           
+    width: 220px;
+    font-size: 22px;
+}
+
+#powLaw {
+    position: absolute;
+    top: 550px;
+    left: 225px;
+    font-size: 16px;
+
+.legend {
+    position: fixed;
+}

@@ -68,7 +68,7 @@ colorSpace.version = "1.2.6";
             Mresponse = this.Mc / this.filters * this.spectrum
             Sresponse = this.Sc / this.filters * this.spectrum
         }
-        #record param
+        //record param
         this.params['fundamentals'] = fundamental
         this.params['LMSpeaks'] = LMSpeaks
         
