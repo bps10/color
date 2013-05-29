@@ -247,14 +247,18 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
                     'probSurround'] >= thresh:
                 if SecondStage['percent'][i]['probSurround'] >= thresh:
                     print SecondStage['percent'][i]
-                    ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                    ax1.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_M'][i][1],
                             c=(1,0,0), linewidth=1, alpha=0.25)
-                    ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                    ax2.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_L'][i][1],
                             c=(0,0,1), linewidth=1, alpha=0.25)
                 else:
-                    ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                    ax1.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_M'][i][1],
                             c=(0,0,0), linewidth=1, alpha=0.10)
-                    ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                    ax2.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_L'][i][1],
                             c=(0,0,0), linewidth=1, alpha=0.10)
                 
 
@@ -383,7 +387,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
 
 if __name__ == '__main__':
 
-    eccentricityAnalysis()
+    #eccentricityAnalysis()
     #LMratiosAnalysis(Volbrecht1997=True)
-    #plotModel(plotSpecSens=False, plotCurveFamily=True,
-    #          plotUniqueHues=False, savefigs=False)
+    plotModel(plotSpecSens=False, plotCurveFamily=True,
+              plotUniqueHues=True, savefigs=False)
