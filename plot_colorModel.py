@@ -12,9 +12,9 @@ from colorModel import colorModel, getCarroll_LMratios
 def eccentricityAnalysis():
     '''
     '''
-    cond = {0: {'percent': 0.25, 'lines': '-'},
-                  1: {'percent': 0.50, 'lines': '--'},
-                  2: {'percent': 0.75, 'lines': '-.'}, }
+    cond = {0: {'percent': 0.40, 'lines': '-'},
+                  1: {'percent': 0.60, 'lines': '--'},
+                  2: {'percent': 0.80, 'lines': '-.'}, }
 
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)    
@@ -22,9 +22,9 @@ def eccentricityAnalysis():
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
 
     for c in cond.itervalues():
-        print c
+
         uniqueHues = {}
-        for center_cones in range(1, 11):
+        for center_cones in range(1, 6):
 
             model = colorModel(q=1.3, center_cones=center_cones)
             model.genModel(ConeRatio={'fracLvM': c['percent'], 's': 0.05, })
@@ -41,8 +41,8 @@ def eccentricityAnalysis():
         ax.plot(center_cones, blue, 'bo' + c['lines'])
         ax.plot(center_cones, yellow, 'yo' + c['lines'])
 
-    ax.set_xlim([0.85, 10.15])
-    ax.set_ylim([460, 660])
+    #ax.set_xlim([0.85, 5.15])
+    ax.set_ylim([460, 620])
     ax.set_xlabel("number of center cones")
     ax.set_ylabel("wavelength (nm)")
     plt.tight_layout()
@@ -387,7 +387,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
 
 if __name__ == '__main__':
 
-    #eccentricityAnalysis()
-    #LMratiosAnalysis(Volbrecht1997=True)
-    plotModel(plotSpecSens=False, plotCurveFamily=True,
-              plotUniqueHues=True, savefigs=False)
+    eccentricityAnalysis()
+    LMratiosAnalysis(Volbrecht1997=True)
+    #plotModel(plotSpecSens=False, plotCurveFamily=True,
+    #          plotUniqueHues=True, savefigs=False)
