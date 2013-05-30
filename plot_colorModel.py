@@ -8,9 +8,49 @@ from spectsens import spectsens
 import PlottingFun as pf
 from colorModel import colorModel, getCarroll_LMratios
 
+
+def eccentricityAnalysis():
+    '''
+    '''
+    cond = {0: {'percent': 0.25, 'lines': '-'},
+                  1: {'percent': 0.50, 'lines': '--'},
+                  2: {'percent': 0.75, 'lines': '-.'}, }
+
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)    
+    pf.AxisFormat(linewidth=2, markersize=14)
+    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+    for c in cond.itervalues():
+        print c
+        uniqueHues = {}
+        for center_cones in range(1, 11):
+
+            model = colorModel(q=1.3, center_cones=center_cones)
+            model.genModel(ConeRatio={'fracLvM': c['percent'], 's': 0.05, })
+            uniqueHues[center_cones] = model.get_current_uniqueHues()
+
+        yellow, green, blue, center_cones = [], [], [], []
+        for _cones, hues in uniqueHues.iteritems():
+            yellow.append(hues['yellow'])
+            green.append(hues['green'])
+            blue.append(hues['blue'])
+            center_cones.append(_cones)
+
+        ax.plot(center_cones, green, 'go' + c['lines'])
+        ax.plot(center_cones, blue, 'bo' + c['lines'])
+        ax.plot(center_cones, yellow, 'yo' + c['lines'])
+
+    ax.set_xlim([0.85, 10.15])
+    ax.set_ylim([460, 660])
+    ax.set_xlabel("number of center cones")
+    ax.set_ylabel("wavelength (nm)")
+    plt.tight_layout()
+    plt.show()
+
 def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
                         plot=True, savefigs=False):
-    '''Creates a dictionary like object.
+    '''
     '''
 
     model = colorModel(q=1.300)
@@ -207,14 +247,18 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
                     'probSurround'] >= thresh:
                 if SecondStage['percent'][i]['probSurround'] >= thresh:
                     print SecondStage['percent'][i]
-                    ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                    ax1.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_M'][i][1],
                             c=(1,0,0), linewidth=1, alpha=0.25)
-                    ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                    ax2.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_L'][i][1],
                             c=(0,0,1), linewidth=1, alpha=0.25)
                 else:
-                    ax1.plot(FirstStage['lambdas'], SecondStage['lmsV_M'][i],
+                    ax1.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_M'][i][1],
                             c=(0,0,0), linewidth=1, alpha=0.10)
-                    ax2.plot(FirstStage['lambdas'], SecondStage['lmsV_L'][i],
+                    ax2.plot(FirstStage['lambdas'], 
+                            SecondStage['lmsV_L'][i][1],
                             c=(0,0,0), linewidth=1, alpha=0.10)
                 
 
@@ -343,6 +387,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
 
 if __name__ == '__main__':
 
-    LMratiosAnalysis(Volbrecht1997=True)
-    #plotModel(plotSpecSens=False, plotCurveFamily=True,
-    #          plotUniqueHues=False, savefigs=False)
+    #eccentricityAnalysis()
+    #LMratiosAnalysis(Volbrecht1997=True)
+    plotModel(plotSpecSens=False, plotCurveFamily=True,
+              plotUniqueHues=True, savefigs=False)

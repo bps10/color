@@ -10,11 +10,12 @@ from spectsens import spectsens
 class colorModel():
     '''
     '''
-    def __init__(self, q=1.300):
+    def __init__(self, center_cones=1, q=1.300):
 
         self.test = False
         self.step = 1
         self._q = q
+        self.center_cones = center_cones
         self.lensMacula = getStockmanFilter()
 
     def findConeRatios(self, fracLvM, fracS=None):
@@ -39,6 +40,7 @@ class colorModel():
         '''
         self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
         self.maxSens = maxSens
+        self.fracLvM = ConeRatio['fracLvM']
         
         self.genFirstStage()
         self.genSecondStage()
@@ -90,6 +92,41 @@ class colorModel():
             'LMratio': LMratio,
             }
 
+    def get_current_uniqueHues(self):
+        '''
+        '''
+        lambdas = self.FirstStage['lambdas']
+        RG = self.ThirdStage['mCenter']
+        BY = self.ThirdStage['lCenter']
+
+        if self.lRatio == 0:
+            uniqueGreen = 555
+            uniqueRed = 592
+        else:
+            zero_cross = np.where(np.diff(np.sign(BY)))[0]
+            uniqueGreen = lambdas[zero_cross[0]]
+            uniqueRed = lambdas[np.argmin(BY)]
+
+        if self.mRatio == 100:
+            uniqueBlue = 474
+            uniqueYellow = 575
+        else:
+            zero_cross = np.where(np.diff(np.sign(RG)))[0]
+            uniqueBlue = lambdas[zero_cross[0]]
+            try:
+                uniqueYellow = lambdas[zero_cross[1]]
+            except:
+                uniqueYellow = 600 
+
+        hues = {
+            'red': uniqueRed,
+            'blue': uniqueBlue,
+            'green': uniqueGreen,
+            'yellow': uniqueYellow,
+            'LMratio': self.fracLvM,
+            }
+        return hues
+
     def genFirstStage(self, startLambda=390, endLambda=750, step=1,
                         Out='anti-log'):
         """Compute the first stage in the model
@@ -127,6 +164,7 @@ class colorModel():
     def genSecondStage(self):
         """Compute the second stage in the model
         """
+        # get cones into dict for optimization below
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
         cones = {
@@ -134,53 +172,82 @@ class colorModel():
             'm': self.FirstStage['M_cones'],
             'l': self.FirstStage['L_cones'], }
 
-        self.SecondStage = {'lmsV_L': {}, 'lmsV_M': {}, 'percent': {}, }
-        i = 0
-        for s in range(0, 101, self.step):
-            for m in range(0, 101, self.step):
-                for l in range(0, 101, self.step): 
-                    if (l + m + s) == 100 and s == 5:
-                        percent = {'s': s, 'm': m, 'l': l, }
-                        lmsV_L = optimizeChannel(self._q, cones, percent,
-                                                        Center=L_cones)
-                        lmsV_M = optimizeChannel(self._q, cones, percent,
-                                                        Center=M_cones)
-                        self.SecondStage['lmsV_L'][i] = lmsV_L
-                        self.SecondStage['lmsV_M'][i] = lmsV_M
-                        self.SecondStage['percent'][i] = percent
-                        i += 1
+        self.SecondStage = {'lmsV_L': {}, 
+                            'lmsV_M': {}, 
+                            'percent': {}, 
+                            'center_cones': self.center_cones, }
+
+        s, _m, _l, i = 5, 0, 0, 0
+        for m in range(0, 101, self.step):
+            for l in range(0, 101, self.step): 
+                if (l + m + s) == 100:
+                    percent = {'s': s, 'm': m, 'l': l, }
+                    
+                    self.SecondStage['lmsV_L'][_l] = {}
+                    self.SecondStage['lmsV_M'][_m] = {}
+                    for Lcenter in range(0, self.center_cones + 1):
+
+                        Mcenter = self.center_cones - Lcenter
+                        propL = Lcenter / self.center_cones
+                        propM = Mcenter / self.center_cones
+                        center_cones = (L_cones * propL) + (M_cones * propM)
+
+                        if propL > 0.5:
+
+                            lmsV_L = optimizeChannel(self._q,
+                                                    cones, percent,
+                                                    Center=center_cones)
+
+                            self.SecondStage['lmsV_L'][_l][Lcenter] = lmsV_L
+
+                        if propM > 0.5:
+
+                            lmsV_M = optimizeChannel(self._q, 
+                                                    cones, percent,
+                                                    Center=center_cones)
+                            
+                            self.SecondStage['lmsV_M'][_m][Mcenter] = lmsV_M
+                            
+
+                    self.SecondStage['percent'][i] = percent
+                    _m += 1
+                    _l += 1
+                    i += 1
+                        
 
     def genThirdStage(self):
         """Compute the third stage in the model
         """
 
-        lCenterProb = self.lRatio / (self.mRatio + self.lRatio)
+        percentL = self.lRatio / (self.mRatio + self.lRatio)
+        percentM = self.mRatio / (self.mRatio + self.lRatio)
         
+        t = self.SecondStage['lmsV_L'][0].keys()
         self.ThirdStage = {
-            'mCenter': np.zeros(len(self.SecondStage['lmsV_L'][0])),
-            'lCenter': np.zeros(len(self.SecondStage['lmsV_M'][0])),
+            'mCenter': np.zeros(len(self.SecondStage['lmsV_M'][0][t[0]])),
+            'lCenter': np.zeros(len(self.SecondStage['lmsV_L'][0][t[0]])),
             }
-        p = 0
-        for i in self.SecondStage['lmsV_L']:
-            
+
+        for i in self.SecondStage['percent']:
+
+            # surround probabilities:
             lNum = self.SecondStage['percent'][i]['l']
             mNum = self.SecondStage['percent'][i]['m']
-
-            probSur = binom(lNum, lNum + mNum, lCenterProb)
-                            
+            probSur = binom(lNum, lNum + mNum, percentL)                            
             self.SecondStage['percent'][i]['probSurround'] = probSur
+
             
-            p += probSur
-            lCenter = self.SecondStage['lmsV_L'][i]
-            mCenter = self.SecondStage['lmsV_M'][i]
+            for num_L, lCenter in self.SecondStage['lmsV_L'][i].iteritems():
 
-            self.ThirdStage['mCenter'] += mCenter * (1 - lCenterProb) * probSur 
-            self.ThirdStage['lCenter'] += lCenter * (lCenterProb) * probSur 
+                centerProb = binom(num_L, self.center_cones, percentL)
+                self.ThirdStage['lCenter'] += (lCenter * 
+                                                centerProb * probSur) 
 
-        if self.test:
-            if round(p, 2) != 1.0:
-                print 'sum p: ', p
-                raise ValueError('prob distribution must sum to 1')
+            for num_M, mCenter in self.SecondStage['lmsV_M'][i].iteritems():
+
+                centerProb = binom(num_M, self.center_cones, percentM)
+                self.ThirdStage['mCenter'] += (mCenter * 
+                                                centerProb * probSur) 
 
     def returnFirstStage(self):
         '''
@@ -211,7 +278,7 @@ def getStockmanFilter(maxLambda=750):
                            delimiter=',')[::10]
     spectrum = lens[:, 0]
     ind = np.where(spectrum == maxLambda)[0] + 1
-                            #just take upto a given index (750nm)
+                #just take upto a given index (750nm)
     return 10 ** (lens[:ind, 1] + macula[:ind, 1])
 
 
@@ -278,6 +345,6 @@ def optimizeUniqueHues():
 
 
 if __name__ == '__main__':
-    #optimizeUniqueHues()
+
     color = colorModel()
 
