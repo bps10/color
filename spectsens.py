@@ -4,7 +4,7 @@ import numpy as np
 
 
 def spectsens(LambdaMax=559, OpticalDensity=0.2, Output='log',
-                StartWavelength=380, EndWavelength=780, Res=1):
+                StartWavelength=380, EndWavelength=780, Res=1000):
     """This function returns a photopigment spectral sensitivity curve
     as defined by Carroll, McMahon, Neitz, and Neitz.
 
@@ -62,33 +62,27 @@ def spectsens(LambdaMax=559, OpticalDensity=0.2, Output='log',
     exTemp = (np.log10(-E + E * np.tanh(-(((10.0 ** (vector -
                 A2))) - F) / G)) + D +
               A * np.tanh(-(((10.0 ** (vector - A2))) - B) / C) -
-              (J / I * (const * np.exp(-0.5 *
+              (J / I * (const * np.exp(1.0) ** (-0.5 *
               (((10.0 ** (vector - A2)) - H) / I) ** 2.0))) -
-              (M / L * (const * np.exp(-0.5 *
+              (M / L * (const * np.exp(1.0) ** (-0.5 *
                (((10.0 ** (vector - A2)) - K) / L) ** 2.0))) -
-              (P / O * (const * np.exp(-0.5 *
+              (P / O * (const * np.exp(1.0) ** (-0.5 *
                (((10.0 ** (vector - A2)) - N) / O) ** 2.0))) +
-              (S / R * (const * np.exp(-0.5 *
+              (S / R * (const * np.exp(1.0) ** (-0.5 *
               (((10.0 ** (vector - A2)) - Q) / R) ** 2.0))) +
-              ((V / U * (const * np.exp(-0.5 *
+              ((V / U * (const * np.exp(1.0) ** (-0.5 *
               (((10.0 ** (vector - A2)) - T) / U) ** 2.0))) / 10.0) +
-              ((Y / X * (const * np.exp(-0.5 *
+              ((Y / X * (const * np.exp(1.0) ** (-0.5 *
               (((10.0 ** (vector - A2)) - W) / X) ** 2.0))) / 100.0))
     ODTemp = np.log10((1.0 - 10.0 ** -((10.0 ** exTemp) *
                         Z)) / (1.0 - 10 ** -Z))
-    print ODTemp
+
     if Output.lower() == 'log':
-        #extinction = exTemp
+        extinction = exTemp
         withOD = ODTemp
     else:
-        #extinction = 10.0 ** exTemp
+        extinction = 10.0 ** exTemp
         withOD = 10.0 ** ODTemp
 
-    return withOD
+    return withOD, extinction
 
-if __name__ == "__main__":
-
-    import matplotlib.pylab as plt
-    plt.figure()
-    plt.plot(np.arange(380, 781, 1), spectsens())
-    plt.show()

@@ -21,7 +21,7 @@ class colorSpace(object):
         self.CMFtoEE_CMF()
         self.EE_CMFtoRGB()
         
-    def genLMS(self, fundamental, LMSpeaks):
+    def genLMS(self, fundamental, LMSpeaks=[559.0, 530.0, 421.0]):
         '''
         '''
         if len(LMSpeaks) != 3:
@@ -96,7 +96,6 @@ class colorSpace(object):
         spectrum = lens[:, 0]
         ind = np.where(spectrum == maxLambda)[0]
         self.spectrum = spectrum[:ind+1]
-        
         self.filters = 10.0 ** (lens[:ind + 1, 1] +  macula[:ind + 1, 1])
 
     def genConvMatrix(self, PRINT=False):
@@ -300,7 +299,7 @@ class colorSpace(object):
 
             line = self._lineEq(r, g, xpoints[ind], ypoints[ind])
             
-        print xpoints, ypoints
+        #print xpoints, ypoints
         neutPoint = self._findDataIntercept(xpoints, ypoints, line)
 
         if verbose is True:
@@ -750,8 +749,8 @@ class colorSpace(object):
         pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
         style = ['-', '--', '-.']
         for i, condition in enumerate(compare):
-            print condition
-            self.genLMS(fund=condition)
+            
+            self.genLMS(fundamental=condition)
             
             ax.plot(self.spectrum, self.Lnorm, 'r' + style[i], linewidth=2)
             ax.plot(self.spectrum, self.Mnorm, 'g' + style[i], linewidth=2)
@@ -1093,7 +1092,7 @@ def main(args):
         color.plotConfusionLines()
 
     if args.BYsystem:
-        color.plotBYsystem(PRINT=True)
+        color.plotBYsystem(False)
 
     if args.Kaiser:
         color.plotKaiser(neitz=True)
