@@ -200,7 +200,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
                                                 sum(volb['count']))
         
 
-def plotModel(plotSpecSens=False, plotCurveFamily=False,
+def plotModel(plotSpecSens=False, plotModel=True, plotCurveFamily=False,
               plotUniqueHues=False, savefigs=False, fracLvM=0.25):
     """Plot cone spectral sensitivies and first stage predictions.
     """
@@ -261,11 +261,11 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
         sortedlist = []
         for key in SecondStage['percent']:
             sortedlist.append(SecondStage['percent'][key])
+            #print SecondStage['percent'][key]
         sortedlist = sorted(sortedlist, key=itemgetter('probSurround'), 
                             reverse=True)
         thresh = sortedlist[15]['probSurround']
-        print thresh
-        
+
         for i in SecondStage['lmsV_L']:
             if i % 2 == 0 or SecondStage['percent'][i][
                     'probSurround'] >= thresh:
@@ -304,83 +304,84 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
             plt.savefig(firsthalf + secondhalf)
         plt.show()
 
-    fig = plt.figure(figsize=(8.5, 11))
-    ax1 = fig.add_subplot(311)
-    ax2 = fig.add_subplot(312)
-    ax3 = fig.add_subplot(313)
-    
-    model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, })
-    ThirdStage = model.returnThirdStage()
-    
-    pf.AxisFormat()     
-    pf.TufteAxis(ax1, ['left', ], Nticks=[5, 3])
-    ax1.plot(FirstStage['lambdas'], 
-             np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-    ax1.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-            'b', linewidth=3)
-    ax1.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-            'r', linewidth=3)
-    ax1.set_xlim([FirstStage['wavelen']['startWave'],
-                     FirstStage['wavelen']['endWave']])
-    ax1.set_ylabel('activity')
-    ax1.yaxis.set_label_coords(-0.2, 0.5)
-    ax1.set_ylim([-0.20, 0.21])
-    ax1.text(0.95, 0.95, '25% L', fontsize=16,
-        horizontalalignment='right',
-        verticalalignment='top',
-        transform=ax1.transAxes)
-
-    model.genModel(ConeRatio={'fracLvM': 0.5, 's': 0.05, })
-    ThirdStage = model.returnThirdStage()
-    
-    pf.AxisFormat()     
-    pf.TufteAxis(ax2, ['left', ], Nticks=[5, 3])
-    ax2.plot(FirstStage['lambdas'], 
-             np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-    ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-            'b', linewidth=3)
-    ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-            'r', linewidth=3)
-    ax2.set_xlim([FirstStage['wavelen']['startWave'],
-                     FirstStage['wavelen']['endWave']])
-    ax2.set_ylabel('activity')
-    ax2.yaxis.set_label_coords(-0.2, 0.5)
-    ax2.set_ylim([-0.20, 0.21])
-    ax2.text(0.95, 0.95, '50% L', fontsize=16, 
-        horizontalalignment='right',
-        verticalalignment='top',
-        transform=ax2.transAxes)
-
-
-    model.genModel(ConeRatio={'fracLvM': 0.75, 's': 0.05, })
-    ThirdStage = model.returnThirdStage()
-    
-    pf.AxisFormat()     
-    pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 3])
-    ax3.plot(FirstStage['lambdas'], 
-             np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-    ax3.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-            'b', linewidth=3)
-    ax3.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-            'r', linewidth=3)
-    ax3.set_xlim([FirstStage['wavelen']['startWave'],
-                     FirstStage['wavelen']['endWave']])
-    ax3.set_ylabel('activity')
-    ax3.yaxis.set_label_coords(-0.2, 0.5)
-    ax3.set_ylim([-0.20, 0.21])
-    ax3.text(0.95, 0.95, '75% L', fontsize=16, 
-        horizontalalignment='right',
-        verticalalignment='top',
-        transform=ax3.transAxes)
-    ax3.set_xlabel('wavelength (nm)')
-    
-    plt.tight_layout()
-    if savefigs:
-        firsthalf = '../bps10.github.com/presentations/static/figures/'
-        secondhalf = 'colorModel/PercentL.png'
-        plt.savefig(firsthalf + secondhalf)
+    if plotModel:
+        fig = plt.figure(figsize=(8.5, 11))
+        ax1 = fig.add_subplot(311)
+        ax2 = fig.add_subplot(312)
+        ax3 = fig.add_subplot(313)
         
-    plt.show()      
+        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, })
+        ThirdStage = model.returnThirdStage()
+        
+        pf.AxisFormat()     
+        pf.TufteAxis(ax1, ['left', ], Nticks=[5, 3])
+        ax1.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
+        ax1.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'b', linewidth=3)
+        ax1.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'r', linewidth=3)
+        ax1.set_xlim([FirstStage['wavelen']['startWave'],
+                         FirstStage['wavelen']['endWave']])
+        ax1.set_ylabel('activity')
+        ax1.yaxis.set_label_coords(-0.2, 0.5)
+        ax1.set_ylim([-0.20, 0.21])
+        ax1.text(0.95, 0.95, '25% L', fontsize=16,
+            horizontalalignment='right',
+            verticalalignment='top',
+            transform=ax1.transAxes)
+
+        model.genModel(ConeRatio={'fracLvM': 0.5, 's': 0.05, })
+        ThirdStage = model.returnThirdStage()
+        
+        pf.AxisFormat()     
+        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 3])
+        ax2.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
+        ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'b', linewidth=3)
+        ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'r', linewidth=3)
+        ax2.set_xlim([FirstStage['wavelen']['startWave'],
+                         FirstStage['wavelen']['endWave']])
+        ax2.set_ylabel('activity')
+        ax2.yaxis.set_label_coords(-0.2, 0.5)
+        ax2.set_ylim([-0.20, 0.21])
+        ax2.text(0.95, 0.95, '50% L', fontsize=16, 
+            horizontalalignment='right',
+            verticalalignment='top',
+            transform=ax2.transAxes)
+
+
+        model.genModel(ConeRatio={'fracLvM': 0.75, 's': 0.05, })
+        ThirdStage = model.returnThirdStage()
+        
+        pf.AxisFormat()     
+        pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 3])
+        ax3.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
+        ax3.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'b', linewidth=3)
+        ax3.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'r', linewidth=3)
+        ax3.set_xlim([FirstStage['wavelen']['startWave'],
+                         FirstStage['wavelen']['endWave']])
+        ax3.set_ylabel('activity')
+        ax3.yaxis.set_label_coords(-0.2, 0.5)
+        ax3.set_ylim([-0.20, 0.21])
+        ax3.text(0.95, 0.95, '75% L', fontsize=16, 
+            horizontalalignment='right',
+            verticalalignment='top',
+            transform=ax3.transAxes)
+        ax3.set_xlabel('wavelength (nm)')
+        
+        plt.tight_layout()
+        if savefigs:
+            firsthalf = '../bps10.github.com/presentations/static/figures/'
+            secondhalf = 'colorModel/PercentL.png'
+            plt.savefig(firsthalf + secondhalf)
+            
+        plt.show()      
     
     if plotUniqueHues:
         model.findUniqueHues()
@@ -412,10 +413,57 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
         plt.show()
 
 
+def main(args):
+    '''
+    '''
+    if args.LM < 1 and args.LM > 0:
+        LMratio = args.LM
+    else:
+        raise ValueError('LM ratio must be between 0 and 1')
+
+    if args.binom:
+        binomPlot()
+    
+    if args.eccen:
+        eccentricityAnalysis()
+    
+    if args.ratio:
+        LMratiosAnalysis(Volbrecht1997=True)
+
+    plotModel(
+            plotSpecSens=args.specsens, 
+            plotModel=args.model,
+            plotCurveFamily=args.curve,
+            plotUniqueHues=args.unique, 
+            savefigs=args.save,
+            fracLvM=LMratio)
+
 if __name__ == '__main__':
 
-    #binomPlot()
-    #eccentricityAnalysis()
-    #LMratiosAnalysis(Volbrecht1997=True)
-    plotModel(plotSpecSens=False, plotCurveFamily=False,
-              plotUniqueHues=True, savefigs=False)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Color Model: display the \
+        Neitz color model")
+    
+    parser.add_argument("-b", "--binom", action="store_true", 
+                        help="compare stockman and neitz fundamentals")
+    parser.add_argument("-e", "--eccen", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("-r", "--ratio", action="store_true", 
+                        help="compare stockman and neitz fundamentals")
+    parser.add_argument("-m", "--model", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("-p", "--specsens", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("-c", "--curve", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("-u", "--unique", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("-s", "--save", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("--LM", type=float, default=0.25,
+                        help="set L:M ratio, default=0.25")
+    # add default save location
+
+    args = parser.parse_args()
+    main(args)
