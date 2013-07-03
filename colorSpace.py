@@ -1,4 +1,5 @@
- # -*- coding: utf-8 *-*
+#! /usr/bin/env python
+# -*- coding: utf-8 *-*
 from __future__ import division
 import numpy as np
 
@@ -976,28 +977,95 @@ class colorSpace(object):
         #plt.show()
 
 
+def main(args):
+    '''
+    '''
+    color = colorSpace()
+    import matplotlib.pylab as plt
+    import PlottingFun as pf
+
+    if args.Compare:
+        color.plotCompare()
+
+    if args.Filters:
+        color.plotFilters()
+
+    if args.SpecSens:
+        color.plotSpecSens()
+
+    if args.CMFs:
+        color.plotCMFs()
+    
+    if args.coeff:
+        color.plotcoeff()
+    
+    if args.ColorSpace:
+        color.plotColorSpace()
+    
+    if args.ConfusionLines:
+        color.plotConfusionLines()
+
+    if args.BYsystem:
+        color.plotBYsystem(PRINT=True)
+
+    if args.Kaiser:
+        color.plotKaiser(neitz=True)
+    
+    if args.tri:
+        color.trichromaticAnalysis()
+    
+    if args.tetra:
+        color.tetrachromaticAnalysis()
+    
+    if args.ConeSpace:
+        color.plotConeSpace()
+    
+    if args.LUV:
+        color.plotLUV()
+    
+
 if __name__ != '__main__':
     from NeitzModel import settings
     STATIC_ROOT = settings.STATIC_ROOT
 ## todo:: Create a logging function.
 
 if __name__ == '__main__':
-    
+
+    import argparse
+
     STATIC_ROOT = './static'
+
+    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
+        derived color spaces")
     
-    color = colorSpace()
-    import matplotlib.pylab as plt
-    import PlottingFun as pf
-    #color.plotCompare()
-    #color.plotFilters()
-    #color.plotSpecSens()
-    #color.plotCMFs()
-    #color.plotcoeff()
-    color.plotColorSpace()
-    #color.plotConfusionLines()
-    #color.plotBYsystem(PRINT=True)
-    #color.plotKaiser(neitz=True)
-    #color.trichromaticAnalysis()
-    #color.tetrachromaticAnalysis()
-    #color.plotConeSpace()
-    #color.plotLUV()
+    parser.add_argument("-m", "--Compare", action="store_true", 
+                        help="compare stockman and neitz fundamentals")
+    parser.add_argument("-a", "--Filters", action="store_true",
+                        help="plot lens and macula filters")
+    parser.add_argument("-r", "--SpecSens", action="store_true", 
+                         help="display spectral sensitivities")
+    parser.add_argument("-y", "--CMFs", action="store_true",
+                        help="plot color matching functions")    
+    parser.add_argument("-f", "--coeff", action="store_true",
+                        help="plot x,y,z coefficients")
+    parser.add_argument("-i", "--ColorSpace", action="store_true",
+                        help="plot color space")
+    parser.add_argument("-c", "--ConfusionLines", action="store_true",
+                        help="plot color space with confusion lines")
+    parser.add_argument("-q", "--BYsystem", action="store_true",
+                        help="plot blue-yellow system on color space")   
+
+    parser.add_argument("-k", "--Kaiser", action="store_true",
+                        help="plot Kaiser data in Neitz or CIE space")
+    parser.add_argument("-t", "--tri", action="store_true",
+                        help="trichromatic analysis plot")
+    parser.add_argument("-e", "--tetra", action="store_true",
+                        help="tetrachromatic analysis plot")   
+    parser.add_argument("-o", "--ConeSpace", action="store_true",
+                        help="displace cone space plot")
+    parser.add_argument("-l", "--LUV", action="store_true",
+                        help="display best fit LUV space") 
+    
+    args = parser.parse_args()
+    main(args)
+ 
