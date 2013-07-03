@@ -6,7 +6,31 @@ from math import factorial
 
 from spectsens import spectsens
 import PlottingFun as pf
-from colorModel import colorModel, getCarroll_LMratios
+from colorModel import colorModel, getCarroll_LMratios, binom
+
+
+def binomPlot():
+    '''
+    '''
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)    
+    pf.AxisFormat(linewidth=2, markersize=14)
+    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+    for probL in range(1, 10):
+        probM = 10 - probL
+        dist = []
+        for percentL in range(0, 101):
+
+            dist.append(binom(percentL, 100, probL / 10))
+
+            color = [probL / 10, probM / 10, 0]
+        ax.plot(np.arange(0,101), dist, c=color)
+
+    ax.set_xlabel("%L v M")
+    ax.set_ylabel("probability")
+    plt.tight_layout()
+    plt.show()
 
 
 def eccentricityAnalysis():
@@ -14,7 +38,7 @@ def eccentricityAnalysis():
     '''
     cond = {0: {'percent': 0.40, 'lines': '-'},
                   1: {'percent': 0.60, 'lines': '--'},
-                  2: {'percent': 0.80, 'lines': '-.'}, }
+                  2: {'percent': 0.80, 'lines': ':'}, }
 
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111)    
@@ -42,7 +66,7 @@ def eccentricityAnalysis():
         ax.plot(center_cones, yellow, 'yo' + c['lines'])
 
     #ax.set_xlim([0.85, 5.15])
-    ax.set_ylim([460, 620])
+    ax.set_ylim([460, 625])
     ax.set_xlabel("number of center cones")
     ax.set_ylabel("wavelength (nm)")
     plt.tight_layout()
@@ -261,6 +285,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
                             SecondStage['lmsV_L'][i][1],
                             c=(0,0,0), linewidth=1, alpha=0.10)
                 
+        ax1.set_ylim([-0.4, 0.4])
 
         ax1.set_xlim([FirstStage['wavelen']['startWave'],
                       FirstStage['wavelen']['endWave']])
@@ -363,7 +388,7 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
         fig = plt.figure(figsize=(8, 6))
         ax1 = fig.add_subplot(111)
         pf.AxisFormat()
-        pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[5, 5])
+        pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[4, 5])
 
         #ax1.plot(UniqueHues['LMratio'], UniqueHues['red'],
         #        'r', linewidth=3)
@@ -374,6 +399,8 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
         ax1.plot(UniqueHues['LMratio'], UniqueHues['yellow'],
                 'y', linewidth=3)
 
+        ax1.set_xlim([20, 100])
+        ax1.set_ylim([460, 600])
         ax1.set_ylabel('wavelength (nm)')
         ax1.set_xlabel('% L vs M')
 
@@ -387,7 +414,8 @@ def plotModel(plotSpecSens=False, plotCurveFamily=False,
 
 if __name__ == '__main__':
 
-    eccentricityAnalysis()
-    LMratiosAnalysis(Volbrecht1997=True)
-    #plotModel(plotSpecSens=False, plotCurveFamily=True,
-    #          plotUniqueHues=True, savefigs=False)
+    #binomPlot()
+    #eccentricityAnalysis()
+    #LMratiosAnalysis(Volbrecht1997=True)
+    plotModel(plotSpecSens=False, plotCurveFamily=False,
+              plotUniqueHues=True, savefigs=False)

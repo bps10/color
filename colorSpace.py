@@ -98,7 +98,7 @@ class colorSpace(object):
         self.spectrum = spectrum[:ind+1]
         
         self.filters = 10.0 ** (lens[:ind + 1, 1] +  macula[:ind + 1, 1])
-        
+
     def genConvMatrix(self, PRINT=False):
         '''
         '''
@@ -150,7 +150,6 @@ class colorSpace(object):
             np.interp(lights['s'], self.spectrum, Xnorm),
             np.interp(lights['x'], self.spectrum, Xnorm)]])
         return convMatrix
-
 
     def genXYZ(self, plot=True):
         '''
@@ -244,7 +243,6 @@ class colorSpace(object):
     def LMStoCMFs(self):
         '''
         '''
-        
         LMSsens = np.array([self.Lnorm, self.Mnorm, self.Snorm])
         self.CMFs = np.dot(np.linalg.inv(self.convMatrix), LMSsens)
 
@@ -281,11 +279,39 @@ class colorSpace(object):
             return neutPoint, [r, g]
         else:
             return neutPoint
+
+    def lambda2RG(self, lam, equal_energy=True, verbose=False):
+        '''
+        '''
+        self.find_copunctuals()
+        imagLine = self._lineEq(self.copunctuals['protan'][0], 
+                                self.copunctuals['protan'][1],
+                                self.copunctuals['deutan'][0], 
+                                self.copunctuals['deutan'][1])
+        xpoints = np.arange(self.copunctuals['protan'][0], 
+                            self.copunctuals['deutan'][0], 0.01)
+        ypoints = imagLine(xpoints)
+
+        r, g, b = self.find_testLightMatch(lam)
+        if equal_energy:
+            line = self._lineEq(r, g)
+        else:
+            ind = int(len(xpoints) * (2/3))
+
+            line = self._lineEq(r, g, xpoints[ind], ypoints[ind])
             
-    def BY2lambda(self, propS, propM, verbose=False):
+        print xpoints, ypoints
+        neutPoint = self._findDataIntercept(xpoints, ypoints, line)
+
+        if verbose is True:
+            return neutPoint, [r, g]
+        else:
+            return neutPoint
+
+    def BY2lambda(self, propS, propM, propL=0, verbose=False):
         '''
         '''
-        l = 0
+        l = propL
         m = -propM
         s = propS
         
@@ -597,7 +623,7 @@ class colorSpace(object):
         plt.show()
 
     def plotKaiser(self, neitz=False, showBY=True, clip=True,
-                   showSub1=False, showSub2=True):
+                   showSub1=False, showSub2=True, stockman=False):
         '''
         
         '''
@@ -624,16 +650,29 @@ class colorSpace(object):
                             markersize=8, markeredgewidth=2, linewidth=2)
 
         if showBY:
-            neut, RG = self.BY2lambda(0, 1., True)
-            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
-                            '-o', c=(0, 1, 0), markersize=8, linewidth=2)  
-            neut, RG = self.BY2lambda(1, 0, True)
-            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
-                            '-o', c=(0, 0, 1), markersize=8, linewidth=2)  
-            neut, RG = self.lambda2BY(520, True)
-            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
-                            '-o', c=(0, 0.5, 0.5),
-                            markersize=8, linewidth=2)  
+            if stockman:
+                neut2, RG2 = self.BY2lambda(0, 0, 1., True)
+                c2 = (1, 0, 0)
+                c3 = (0.5, 0.5, 0)
+                neut3, RG3 = self.lambda2RG(522, False, True)
+            else:
+                neut2, RG2 = self.BY2lambda(1, 0, 0, True)
+                c2 = (0, 0, 1)
+                c3 = (0, 0.5, 0.5)
+                neut3, RG3 = self.lambda2BY(522, True)
+            neut1, RG1 = self.BY2lambda(0, 1., 0, True)
+            
+            c1 = (0, 1, 0)
+            # plot green copunctual line
+            self.cs_ax.plot([neut1[0], RG1[0]], [neut1[1], RG1[1]], 
+                            '-o', c=c1, markersize=8, linewidth=2)  
+            # plot red or blue copunctual depending on neitz or stockman
+            self.cs_ax.plot([neut2[0], RG2[0]], [neut2[1], RG2[1]], 
+                            '-o', c=c2, markersize=8, linewidth=2)  
+            # plot 
+            neut, RG = self.lambda2BY(522, True)
+            self.cs_ax.plot([neut3[0], RG3[0]], [neut3[1], RG3[1]], 
+                            '-o', c=c3, markersize=8, linewidth=2)  
 
         if clip is True:                
             self.cs_ax.set_xlim([-0.4, 1.2])
@@ -871,8 +910,58 @@ class colorSpace(object):
             self.cs_ax.set_ylim([-0.2, 1.2])
         plt.show()                 
 
+
+    def plotStockmanAnalysis(self, scale=0.34):
+        '''
+        '''
+        self.genLMS('stockman', [559, 530, 421])
+
+        stage2 = {}
+        stage2['L-M'] = self.Lnorm - self.Mnorm
+        stage2['M-L'] = self.Mnorm - self.Lnorm
+        LM = self.Lnorm + (0.5 * self.Mnorm)
+        stage2['S-LM'] = self.Snorm - (0.69 * LM)
+        stage2['LM-S'] = (0.69 * LM) - self.Snorm
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pf.AxisFormat()
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+        for key in stage2:
+            ax.plot(self.spectrum, stage2[key])
+
+        ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
+        ax.set_xlabel('wavelength (nm)')
+        ax.set_ylabel('sensitivity')
+        plt.tight_layout()
+        plt.show()
+
+        stage3 = {}
+        stage3['red'] = (2.55 * stage2['L-M']) + stage2['S-LM']
+        stage3['green'] = (2.55 * stage2['M-L']) + stage2['LM-S']
+        stage3['blue'] = (scale * (2.55 * stage2['M-L']) + 
+            (self.Snorm - (scale * 0.69 * LM)))
+        stage3['yellow'] = (scale * (2.55 * stage2['L-M']) +
+            ((scale * 0.69 * LM) - self.Snorm))
+
+        print 'RG sys: ', np.sum(stage3['red'])
+        print 'BY sys: ', np.sum(stage3['blue'])
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pf.AxisFormat()
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+        for key in stage3:
+            ax.plot(self.spectrum, stage3[key], c=key)
+
+        ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
+        ax.set_xlabel('wavelength (nm)')
+        ax.set_ylabel('sensitivity')
+        plt.tight_layout()
+        plt.show()
+
     def _plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
-                        invert=False, Luv=False, skipLam=None, color=True):
+                        invert=False, Luv=False, skipLam=None, color=False):
         '''
         '''      
         try:
@@ -981,8 +1070,6 @@ def main(args):
     '''
     '''
     color = colorSpace()
-    import matplotlib.pylab as plt
-    import PlottingFun as pf
 
     if args.Compare:
         color.plotCompare()
@@ -1031,6 +1118,8 @@ if __name__ != '__main__':
 
 if __name__ == '__main__':
 
+    import matplotlib.pylab as plt
+    import PlottingFun as pf
     import argparse
 
     STATIC_ROOT = './static'

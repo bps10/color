@@ -64,7 +64,7 @@ class colorModel():
                 RG = temp['mCenter']
                 BY = temp['lCenter']
 
-                if i == 0:
+                if self.lRatio == 0:
                     uniqueGreen.append(555)
                     uniqueRed.append(592)
                 else:
@@ -72,8 +72,8 @@ class colorModel():
                     uniqueGreen.append(lambdas[zero_cross[0]])
                     uniqueRed.append(lambdas[np.argmin(BY)])
 
-                if i == 100:
-                    uniqueBlue.append(474)
+                if self.mRatio == 0:
+                    uniqueBlue.append(467)
                     uniqueYellow.append(575)
                 else:
                     zero_cross = np.where(np.diff(np.sign(RG)))[0]
@@ -100,23 +100,23 @@ class colorModel():
         BY = self.ThirdStage['lCenter']
 
         if self.lRatio == 0:
-            uniqueGreen = 555
+            uniqueGreen = 553
             uniqueRed = 592
         else:
             zero_cross = np.where(np.diff(np.sign(BY)))[0]
             uniqueGreen = lambdas[zero_cross[0]]
             uniqueRed = lambdas[np.argmin(BY)]
 
-        if self.mRatio == 100:
+        if self.mRatio == 0:
             uniqueBlue = 474
-            uniqueYellow = 575
+            uniqueYellow = 577
         else:
             zero_cross = np.where(np.diff(np.sign(RG)))[0]
             uniqueBlue = lambdas[zero_cross[0]]
             try:
                 uniqueYellow = lambdas[zero_cross[1]]
             except:
-                uniqueYellow = 600 
+                uniqueYellow = np.nan 
 
         hues = {
             'red': uniqueRed,
@@ -221,11 +221,10 @@ class colorModel():
 
         percentL = self.lRatio / (self.mRatio + self.lRatio)
         percentM = self.mRatio / (self.mRatio + self.lRatio)
-        
-        t = self.SecondStage['lmsV_L'][0].keys()
+
         self.ThirdStage = {
-            'mCenter': np.zeros(len(self.SecondStage['lmsV_M'][0][t[0]])),
-            'lCenter': np.zeros(len(self.SecondStage['lmsV_L'][0][t[0]])),
+            'mCenter': np.zeros(len(self.FirstStage['lambdas'])),
+            'lCenter': np.zeros(len(self.FirstStage['lambdas'])),
             }
 
         for i in self.SecondStage['percent']:
@@ -236,7 +235,6 @@ class colorModel():
             probSur = binom(lNum, lNum + mNum, percentL)                            
             self.SecondStage['percent'][i]['probSurround'] = probSur
 
-            
             for num_L, lCenter in self.SecondStage['lmsV_L'][i].iteritems():
 
                 centerProb = binom(num_L, self.center_cones, percentL)
