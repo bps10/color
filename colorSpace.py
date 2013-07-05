@@ -323,11 +323,30 @@ class colorSpace(object):
         else:
             return neutPoint
 
-    def EE_CMFtoRGB(self):
+    def RG2lambda(self, propS, propM, propL=0, verbose=False):
         '''
         '''
-        self.rVal, self.gVal, self.bVal = self.TrichromaticEquation(
+        l = propL
+        m = -propM
+        s = propS
+        
+        r, g, b = self.find_rgb(np.array([l, m, s]))
+        line = self._lineEq(r, g)
+        neutPoint = self._findDataIntercept(self.rVal, self.gVal, line)
+        
+        if verbose is True:
+            return neutPoint, [r, g]
+        else:
+            return neutPoint
+
+    def EE_CMFtoRGB(self, rgb=None):
+        '''
+        '''
+        if rgb is None:
+            self.rVal, self.gVal, self.bVal = self.TrichromaticEquation(
                             self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+        else:
+            return self.TrichromaticEquation(rgb[0], rgb[1], rgb[2])
 
     def find_copunctuals(self):
         '''
@@ -880,6 +899,30 @@ class colorSpace(object):
         
         plt.show()
             
+    def plotRGsystem(self, PRINT=False, clip=True):
+        '''
+        '''
+        self._plotColorSpace()
+        
+        for l in range(0, 11):
+            m = (10.0 - l) / 10.0
+            l = l / 10.0
+            
+            neut, RG = self.RG2lambda(0, m, l, True)
+            
+            if PRINT is True:
+                #print RG
+                #print neut
+                print self.find_testlightFromRG(neut[0], neut[1])
+            self.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
+                            '-o', c=(l, m, 0), markersize=8, linewidth=2)
+        
+        if clip is True:                
+            self.cs_ax.set_xlim([-0.4, 1.2])
+            self.cs_ax.set_ylim([-0.2, 1.2])
+        
+        plt.show()
+
     def plotConfusionLines(self, deficit='tritan', clip=True):
         '''add confusion lines
             '''
@@ -909,8 +952,7 @@ class colorSpace(object):
             self.cs_ax.set_ylim([-0.2, 1.2])
         plt.show()                 
 
-
-    def plotStockmanAnalysis(self, scale=0.34):
+    def genStockmanAnalysis(self, scale=0.34):
         '''
         '''
         self.genLMS('stockman', [559, 530, 421])
@@ -921,6 +963,25 @@ class colorSpace(object):
         LM = self.Lnorm + (0.5 * self.Mnorm)
         stage2['S-LM'] = self.Snorm - (0.69 * LM)
         stage2['LM-S'] = (0.69 * LM) - self.Snorm
+
+        stage3 = {}
+        stage3['red'] = (2.55 * stage2['L-M']) + stage2['S-LM']
+        stage3['green'] = (2.55 * stage2['M-L']) + stage2['LM-S']
+        stage3['blue'] = (scale * (2.55 * stage2['M-L']) + 
+            (self.Snorm - (scale * 0.69 * LM)))
+        stage3['yellow'] = (scale * (2.55 * stage2['L-M']) +
+            ((scale * 0.69 * LM) - self.Snorm))
+
+        print 'RG sys: ', np.sum(stage3['red'])
+        print 'BY sys: ', np.sum(stage3['blue'])
+
+        return stage2, stage3
+
+    def plotStockmanAnalysis(self, scale=0.34):
+        '''
+        '''
+
+        stage2, stage3 = self.genStockmanAnalysis()
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -935,17 +996,6 @@ class colorSpace(object):
         plt.tight_layout()
         plt.show()
 
-        stage3 = {}
-        stage3['red'] = (2.55 * stage2['L-M']) + stage2['S-LM']
-        stage3['green'] = (2.55 * stage2['M-L']) + stage2['LM-S']
-        stage3['blue'] = (scale * (2.55 * stage2['M-L']) + 
-            (self.Snorm - (scale * 0.69 * LM)))
-        stage3['yellow'] = (scale * (2.55 * stage2['L-M']) +
-            ((scale * 0.69 * LM) - self.Snorm))
-
-        print 'RG sys: ', np.sum(stage3['red'])
-        print 'BY sys: ', np.sum(stage3['blue'])
-
         fig = plt.figure()
         ax = fig.add_subplot(111)
         pf.AxisFormat()
@@ -954,6 +1004,23 @@ class colorSpace(object):
             ax.plot(self.spectrum, stage3[key], c=key)
 
         ax.set_xlim([self.spectrum[0], self.spectrum[-1]])
+        ax.set_xlabel('wavelength (nm)')
+        ax.set_ylabel('sensitivity')
+        plt.tight_layout()
+        plt.show()
+
+        # Unique green series plot
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        pf.AxisFormat()
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+        for j in [0.04, 0.34, 0.94, 2, 4, 10]:
+            stage2, stage3 = self.genStockmanAnalysis(j)
+            ax.plot(self.spectrum, stage3['blue'], c='b', alpha=0.7)
+        ax.plot(self.spectrum, np.zeros(len(self.spectrum)), 'k')
+        ax.set_xlim([self.spectrum[0], 650])
+        ax.set_ylim([-0.7, 1.4])
         ax.set_xlabel('wavelength (nm)')
         ax.set_ylabel('sensitivity')
         plt.tight_layout()
@@ -1094,8 +1161,14 @@ def main(args):
     if args.BYsystem:
         color.plotBYsystem(False)
 
+    if args.RGsystem:
+        color.plotRGsystem(False)
+
     if args.Kaiser:
         color.plotKaiser(neitz=True)
+
+    if args.Stockman:
+        color.plotStockmanAnalysis()
     
     if args.tri:
         color.trichromaticAnalysis()
@@ -1126,7 +1199,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
         derived color spaces")
     
-    parser.add_argument("-m", "--Compare", action="store_true", 
+    parser.add_argument("-x", "--Compare", action="store_true", 
                         help="compare stockman and neitz fundamentals")
     parser.add_argument("-a", "--Filters", action="store_true",
                         help="plot lens and macula filters")
@@ -1142,9 +1215,13 @@ if __name__ == '__main__':
                         help="plot color space with confusion lines")
     parser.add_argument("-q", "--BYsystem", action="store_true",
                         help="plot blue-yellow system on color space")   
+    parser.add_argument("-p", "--RGsystem", action="store_true",
+                        help="plot blue-yellow system on color space") 
 
     parser.add_argument("-k", "--Kaiser", action="store_true",
                         help="plot Kaiser data in Neitz or CIE space")
+    parser.add_argument("-m", "--Stockman", action="store_true",
+                        help="plot Stockman model.")
     parser.add_argument("-t", "--tri", action="store_true",
                         help="trichromatic analysis plot")
     parser.add_argument("-e", "--tetra", action="store_true",
