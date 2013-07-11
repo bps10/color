@@ -417,6 +417,13 @@ class colorSpace(object):
         out = self.TrichromaticEquation(cmf[0], cmf[1], cmf[2])
         return out
 
+    def find_BYweights(self):
+        '''Function not finished
+        '''
+        neut, RG = self.BY2lambda(s, m, 0, True)
+        n, rg  = self.BY2lambda(0.48, 0.52, 0, True)
+        print self.find_testlightFromRG(n[0], n[1])
+
     def trichromaticAnalysis(self, Lmax=560, Smax=417):
         '''
         '''
@@ -679,7 +686,7 @@ class colorSpace(object):
                 c3 = (0, 0.5, 0.5)
                 neut3, RG3 = self.lambda2BY(522, True)
             neut1, RG1 = self.BY2lambda(0, 1., 0, True)
-            
+
             c1 = (0, 1, 0)
             # plot green copunctual line
             self.cs_ax.plot([neut1[0], RG1[0]], [neut1[1], RG1[1]], 
@@ -883,8 +890,6 @@ class colorSpace(object):
         for s in range(0, 11):
             m = (10.0 - s) / 10.0
             s = s / 10.0
-            
-            neut, RG = self.BY2lambda(s, m, True)
             
             if PRINT is True:
                 #print RG
