@@ -648,7 +648,8 @@ class colorSpace(object):
         plt.show()
 
     def plotKaiser(self, neitz=False, showBY=True, clip=True,
-                   showSub1=False, showSub2=True, stockman=False):
+                   showSub1=False, showSub2=True, stockman=False,
+                   series=True):
         '''
         
         '''
@@ -695,9 +696,16 @@ class colorSpace(object):
             self.cs_ax.plot([neut2[0], RG2[0]], [neut2[1], RG2[1]], 
                             '-o', c=c2, markersize=8, linewidth=2)  
             # plot 
-            neut, RG = self.lambda2BY(522, True)
             self.cs_ax.plot([neut3[0], RG3[0]], [neut3[1], RG3[1]], 
                             '-o', c=c3, markersize=8, linewidth=2)  
+
+        if stockman and series:
+
+            for lam in [500, 505, 510, 515]:
+                neut3, RG3 = self.lambda2RG(lam, False, True)
+                self.cs_ax.plot([neut3[0], RG3[0]], [neut3[1], RG3[1]], 
+                    '-o', c=c3, markersize=8, linewidth=2)  
+
 
         if clip is True:                
             self.cs_ax.set_xlim([-0.4, 1.2])
@@ -982,7 +990,7 @@ class colorSpace(object):
 
         return stage2, stage3
 
-    def plotStockmanAnalysis(self, scale=0.34):
+    def plotStockmanAnalysis(self):
         '''
         '''
 
@@ -1015,20 +1023,37 @@ class colorSpace(object):
         plt.show()
 
         # Unique green series plot
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        fig1 = plt.figure()
+        fig2 = plt.figure()
+        ax1 = fig1.add_subplot(111)
+        ax2 = fig2.add_subplot(111)
         pf.AxisFormat()
-        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+        pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[5, 5])
+        pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
 
-        for j in [0.04, 0.34, 0.94, 2, 4, 10]:
+        for j in [0.04, 0.34, 0.94, 2, 4, 6]:
             stage2, stage3 = self.genStockmanAnalysis(j)
-            ax.plot(self.spectrum, stage3['blue'], c='b', alpha=0.7)
-        ax.plot(self.spectrum, np.zeros(len(self.spectrum)), 'k')
-        ax.set_xlim([self.spectrum[0], 650])
-        ax.set_ylim([-0.7, 1.4])
-        ax.set_xlabel('wavelength (nm)')
-        ax.set_ylabel('sensitivity')
-        plt.tight_layout()
+            ax1.plot(self.spectrum, stage3['blue'], c='b', alpha=0.7)
+            ax2.plot(self.spectrum, self.Snorm -
+                j / 10 * (self.Lnorm + (0.5 * self.Mnorm)), 
+                c='b', alpha=0.7)
+
+        ax1.plot(self.spectrum, np.zeros(len(self.spectrum)), 'k',
+            linewidth=1)
+        ax2.plot(self.spectrum, np.zeros(len(self.spectrum)), 'k',
+            linewidth=1)
+        ax1.set_xlim([self.spectrum[0], 650])
+        ax1.set_ylim([-0.7, 1.4])
+        ax1.set_xlabel('wavelength (nm)')
+        ax1.set_ylabel('sensitivity')
+
+        ax2.set_xlim([self.spectrum[0], 700])
+        ax2.set_ylim([-0.9, 1.2])
+        ax2.set_xlabel('wavelength (nm)')
+        ax2.set_ylabel('sensitivity')
+
+        fig1.tight_layout()
+        fig2.tight_layout()
         plt.show()
 
     def _plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
@@ -1170,7 +1195,7 @@ def main(args):
         color.plotRGsystem(False)
 
     if args.Kaiser:
-        color.plotKaiser(neitz=True)
+        color.plotKaiser(neitz=True, stockman=True)
 
     if args.Stockman:
         color.plotStockmanAnalysis()
