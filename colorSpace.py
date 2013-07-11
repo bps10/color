@@ -2,8 +2,11 @@
 # -*- coding: utf-8 *-*
 from __future__ import division
 import numpy as np
+import matplotlib.pylab as plt
 
-from spectsens import spectsens
+from base import plot as pf
+from base import spectsens as ss
+from base import optics as op
 
 class colorSpace(object):
     '''
@@ -42,21 +45,14 @@ class colorSpace(object):
             Sresponse = self.Sc * self.spectrum
             
         elif fundamental.lower() == 'stockspecsens':
-            ind = len(self.spectrum)
-            foo = np.genfromtxt(STATIC_ROOT + 
-                                    '/stockman/specSens.csv', 
-                                delimiter=',')[::10, :]
+            ind = np.max(self.spectrum)
 
-            LS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 1]) *
-                    0.5)) / (1.0 - 10 ** -0.5))
-            MS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 2]) *
-                    0.5)) / (1.0 - 10 ** -0.5))
-            SS = np.log10((1.0 - 10.0 ** -((10.0 ** foo[:, 3]) *
-                    0.4)) / (1.0 - 10 ** -0.4))
-          
-            self.Lc = 10.0 ** LS[:ind]
-            self.Mc = 10.0 ** MS[:ind]
-            self.Sc = 10.0 ** SS[:ind]
+            sens = ss.stockmanfund(minLambda=390, maxLambda=ind)
+            print sens
+            LS = sens[:, 0]
+            MS = sens[:, 1]
+            SS = sens[:, 2]
+
             
             Lresponse = self.Lc / self.filters * self.spectrum
             Mresponse = self.Mc / self.filters * self.spectrum
@@ -65,13 +61,13 @@ class colorSpace(object):
         elif fundamental.lower() == 'neitz':
             minspec = min(self.spectrum)
             maxspec = max(self.spectrum)
-            self.Lc = spectsens(LMSpeaks[0], 0.5, 'anti-log', minspec, 
-                                             maxspec, 1)[0]
-            self.Mc = spectsens(LMSpeaks[1], 0.5, 'anti-log', minspec, 
-                                             maxspec, 1)[0]
-            self.Sc = spectsens(LMSpeaks[2], 0.4, 'anti-log', minspec, 
-                                             maxspec, 1)[0]
-                                                         
+            self.Lc = ss.neitz(LMSpeaks[0], 0.5, False, minspec, 
+                                             maxspec, 1)
+            self.Mc = ss.neitz(LMSpeaks[1], 0.5, False, minspec, 
+                                             maxspec, 1)
+            self.Sc = ss.neitz(LMSpeaks[2], 0.4, False, minspec, 
+                                             maxspec, 1)
+                                            
             Lresponse = self.Lc / self.filters * self.spectrum
             Mresponse = self.Mc / self.filters * self.spectrum
             Sresponse = self.Sc / self.filters * self.spectrum
@@ -87,16 +83,9 @@ class colorSpace(object):
     def genStockmanFilter(self, maxLambda=770):
         '''
         '''
-        lens = np.genfromtxt(STATIC_ROOT + '/stockman/lens.csv', 
-                             delimiter=',')[::10, :]
-        macula = np.genfromtxt(STATIC_ROOT + 
-                                '/stockman/macular.csv', 
-                                delimiter=',')[::10, :]
-
-        spectrum = lens[:, 0]
-        ind = np.where(spectrum == maxLambda)[0]
-        self.spectrum = spectrum[:ind+1]
-        self.filters = 10.0 ** (lens[:ind + 1, 1] +  macula[:ind + 1, 1])
+        self.filters, self.spectrum = op.filters.stockman(minLambda=380, 
+            maxLambda=maxLambda, RETURN_SPECTRUM=True, 
+            resolution=1)
 
     def genConvMatrix(self, PRINT=False):
         '''
@@ -122,8 +111,8 @@ class colorSpace(object):
         '''
         minspec = min(self.spectrum)
         maxspec = max(self.spectrum)
-        Xsens = spectsens(Xpeak, 0.5, 'anti-log', minspec, 
-                                         maxspec, 1)[0]
+        Xsens = ss.neitz(Xpeak, 0.5, False, minspec, 
+                                         maxspec, 1)
         Xresponse = Xsens / self.filters * self.spectrum
         Xnorm = Xresponse / np.max(Xresponse)
         
@@ -898,7 +887,8 @@ class colorSpace(object):
         for s in range(0, 11):
             m = (10.0 - s) / 10.0
             s = s / 10.0
-            
+
+            neut, RG = self.BY2lambda(s, m, 0, True)
             if PRINT is True:
                 #print RG
                 #print neut
@@ -1059,12 +1049,7 @@ class colorSpace(object):
     def _plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
                         invert=False, Luv=False, skipLam=None, color=False):
         '''
-        '''      
-        try:
-            plt.__version__
-        except NameError:
-            import matplotlib.pylab as plt
-        
+        '''           
         downSamp = 10
         minLam = 460
         maxLam = 630
@@ -1220,8 +1205,6 @@ if __name__ != '__main__':
 
 if __name__ == '__main__':
 
-    import matplotlib.pylab as plt
-    import PlottingFun as pf
     import argparse
 
     STATIC_ROOT = './static'
