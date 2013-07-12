@@ -4,7 +4,8 @@ import numpy as np
 from scipy.optimize import fsolve
 from math import factorial
 
-from spectsens import spectsens
+from base import spectsens as ss
+from base import optics as op
 
 
 class colorModel():
@@ -16,7 +17,7 @@ class colorModel():
         self.step = 1
         self._q = q
         self.center_cones = center_cones
-        self.lensMacula = getStockmanFilter()
+        self.lensMacula = getStockmanFilter(750)
 
     def findConeRatios(self, fracLvM, fracS=None):
         '''
@@ -134,22 +135,25 @@ class colorModel():
 
         lambdas = np.arange(startLambda, endLambda + step, step)
 
-        L_cones = spectsens(LambdaMax=self.maxSens['l'], Output=Out,
+        L_cones = ss.neitz(LambdaMax=self.maxSens['l'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=0.5,
-                            EndWavelength=endLambda, Res=step)[0]
+                            EndWavelength=endLambda, 
+                            resolution=step)
         L_cones /= self.lensMacula
         
-        M_cones = spectsens(LambdaMax=self.maxSens['m'], Output=Out,
+        M_cones = ss.neitz(LambdaMax=self.maxSens['m'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=0.5,
-                            EndWavelength=endLambda, Res=step)[0]
+                            EndWavelength=endLambda, 
+                            resolution=step)
         M_cones /= self.lensMacula
         
-        S_cones = spectsens(LambdaMax=self.maxSens['s'], Output=Out,
+        S_cones = ss.neitz(LambdaMax=self.maxSens['s'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=0.4,
-                            EndWavelength=endLambda, Res=step)[0]
+                            EndWavelength=endLambda, 
+                            resolution=step)
         S_cones /= self.lensMacula
 
         self.FirstStage = {
@@ -268,16 +272,13 @@ class colorModel():
         return self.uniqueHues
 
 
-def getStockmanFilter(maxLambda=750):
+def getStockmanFilter(maxLambda=770):
     '''
     '''
-    lens = np.genfromtxt('static/stockman/lens.csv', delimiter=',')[::10]
-    macula = np.genfromtxt('static/stockman/macular.csv', 
-                           delimiter=',')[::10]
-    spectrum = lens[:, 0]
-    ind = np.where(spectrum == maxLambda)[0] + 1
-                #just take upto a given index (750nm)
-    return 10 ** (lens[:ind, 1] + macula[:ind, 1])
+    filters = op.filters.stockman(minLambda=380, 
+        maxLambda=maxLambda, RETURN_SPECTRUM=False, 
+        resolution=1)
+    return filters
 
 
 def getCarroll_LMratios():

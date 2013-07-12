@@ -4,9 +4,8 @@ import numpy as np
 import matplotlib.pylab as plt
 from math import factorial
 
-from spectsens import spectsens
-import PlottingFun as pf
-from colorModel import colorModel, getCarroll_LMratios, binom
+import colorModel as cm
+from base import plot as pf
 
 
 def binomPlot():
@@ -22,7 +21,7 @@ def binomPlot():
         dist = []
         for percentL in range(0, 101):
 
-            dist.append(binom(percentL, 100, probL / 10))
+            dist.append(cm.binom(percentL, 100, probL / 10))
 
             color = [probL / 10, probM / 10, 0]
         ax.plot(np.arange(0,101), dist, c=color)
@@ -50,7 +49,7 @@ def eccentricityAnalysis():
         uniqueHues = {}
         for center_cones in range(1, 6):
 
-            model = colorModel(q=1.3, center_cones=center_cones)
+            model = cm.colorModel(q=1.3, center_cones=center_cones)
             model.genModel(ConeRatio={'fracLvM': c['percent'], 's': 0.05, })
             uniqueHues[center_cones] = model.get_current_uniqueHues()
 
@@ -77,12 +76,12 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     '''
     '''
 
-    model = colorModel(q=1.300)
+    model = cm.colorModel(q=1.300)
     
     model.genModel()
     model.findUniqueHues()
     uniqueHues = model.returnUniqueHues()
-    carroll = getCarroll_LMratios()
+    carroll = cm.getCarroll_LMratios()
 
     green, yellow, blue = [], [], []
     for subject in carroll['L']:
@@ -205,7 +204,7 @@ def plotModel(plotSpecSens=False, plotModel=True, plotCurveFamily=False,
     """Plot cone spectral sensitivies and first stage predictions.
     """
     
-    model = colorModel()
+    model = cm.colorModel()
     model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, })
     FirstStage = model.returnFirstStage()   
     
