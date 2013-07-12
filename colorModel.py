@@ -284,7 +284,7 @@ def getStockmanFilter(maxLambda=770):
 def getCarroll_LMratios():
     '''
     '''
-    return np.genfromtxt('static/data/Carroll2002_lmRatios.txt', 
+    return np.genfromtxt('data/Carroll2002_lmRatios.txt', 
                 delimiter='\t', dtype=None, skip_header=0, 
                 names=True)
 

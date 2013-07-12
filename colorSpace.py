@@ -32,31 +32,30 @@ class colorSpace(object):
             LMSpeaks = [559.0, 530.0, 421.0]
             
         if fundamental.lower() == 'stockman':
-            ind = len(self.spectrum)
-            foo = np.genfromtxt(STATIC_ROOT + 
-                                    '/stockman/fundamentals2deg.csv', 
-                                 delimiter=',')[::10, :]
-            self.Lc = 10.0 ** foo[:ind, 1]
-            self.Mc = 10.0 ** foo[:ind, 2]
-            self.Sc = 10.0 ** foo[:ind, 3]
+            ind = np.max(self.spectrum)
+
+            sens = ss.stockmanfund(minLambda=390, maxLambda=ind)
+
+            LS = sens[:, 0]
+            MS = sens[:, 1]
+            SS = sens[:, 2]
     
-            Lresponse = self.Lc * self.spectrum
-            Mresponse = self.Mc * self.spectrum
-            Sresponse = self.Sc * self.spectrum
+            Lresponse = LS * self.spectrum
+            Mresponse = MS * self.spectrum
+            Sresponse = SS * self.spectrum
             
         elif fundamental.lower() == 'stockspecsens':
             ind = np.max(self.spectrum)
 
-            sens = ss.stockmanfund(minLambda=390, maxLambda=ind)
-            print sens
+            sens = ss.stockman(minLambda=390, maxLambda=ind)
+
             LS = sens[:, 0]
             MS = sens[:, 1]
             SS = sens[:, 2]
-
             
-            Lresponse = self.Lc / self.filters * self.spectrum
-            Mresponse = self.Mc / self.filters * self.spectrum
-            Sresponse = self.Sc / self.filters * self.spectrum
+            Lresponse = LS / self.filters * self.spectrum
+            Mresponse = MS / self.filters * self.spectrum
+            Sresponse = SS / self.filters * self.spectrum
             
         elif fundamental.lower() == 'neitz':
             minspec = min(self.spectrum)
@@ -164,7 +163,7 @@ class colorSpace(object):
     def genKaiser(self, neitz=False):
         '''
         '''
-        kaiser = np.genfromtxt('static/data/kaiser1987.csv', delimiter=",")
+        kaiser = np.genfromtxt('data/kaiser1987.csv', delimiter=",")
         # sort by subject:
         subj1 = np.where(kaiser[:, 3] == 1)
         subj2 = np.where(kaiser[:, 3] == 2)
@@ -567,7 +566,7 @@ class colorSpace(object):
             raise ImportError('Sorry cannot import scipy')
             
         #lights = np.array([700, 546.1, 435.8])
-        juddVos = np.genfromtxt('static/data/ciexyzjv.csv', delimiter=',')
+        juddVos = np.genfromtxt('data/ciexyzjv.csv', delimiter=',')
         spec = juddVos[:, 0]
         juddVos = juddVos[:, 1:]
 
@@ -1196,18 +1195,11 @@ def main(args):
     
     if args.LUV:
         color.plotLUV()
-    
 
-if __name__ != '__main__':
-    from NeitzModel import settings
-    STATIC_ROOT = settings.STATIC_ROOT
-## todo:: Create a logging function.
 
 if __name__ == '__main__':
 
     import argparse
-
-    STATIC_ROOT = './static'
 
     parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
         derived color spaces")
@@ -1229,7 +1221,7 @@ if __name__ == '__main__':
     parser.add_argument("-q", "--BYsystem", action="store_true",
                         help="plot blue-yellow system on color space")   
     parser.add_argument("-p", "--RGsystem", action="store_true",
-                        help="plot blue-yellow system on color space") 
+                        help="plot red-green system on color space") 
 
     parser.add_argument("-k", "--Kaiser", action="store_true",
                         help="plot Kaiser data in Neitz or CIE space")

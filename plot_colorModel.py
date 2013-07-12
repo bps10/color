@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 # -*- coding: utf-8 *-*
 from __future__ import division
 import numpy as np
@@ -99,7 +100,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     BINS = np.arange(0, 101, 6)
     if Volbrecht1997:
         BINS_G = np.arange(488, 564, 3)
-        volb = np.genfromtxt('static/data/Volbrecht1997.txt', delimiter='\t',
+        volb = np.genfromtxt('data/Volbrecht1997.txt', delimiter='\t',
                       dtype=None, skip_header=0, names=True)
     else:
         BINS_G = np.arange(490, 560, 5)
