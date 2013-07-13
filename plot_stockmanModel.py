@@ -1,36 +1,59 @@
+#! /usr/bin/env python
+import matplotlib.pylab as plt
+import numpy as np
+
+from base import optics as op
+from base import plot as pf
+from stockmanModel import genStockmanAnalysis
+from genLMS import genLMS
 
 
-def plotStockmanAnalysis(space):
+maxLambda = 770
+filters, spectrum = op.filters.stockman(minLambda=380, 
+    maxLambda=maxLambda, RETURN_SPECTRUM=True, 
+    resolution=1)
+Lnorm, Mnorm, Snorm = genLMS(spectrum, filters, 
+    fundamental='stockman', LMSpeaks=[559, 530, 421])
+
+stage2, stage3 = genStockmanAnalysis(spectrum, filters, Lnorm,
+    Mnorm, Snorm)
+
+def plotStage2Stockman():
     '''
     '''
-    stage2, stage3 = space.genStockmanAnalysis()
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
     for key in stage2:
-        ax.plot(space.spectrum, stage2[key])
+        ax.plot(spectrum, stage2[key])
 
-    ax.set_xlim([space.spectrum[0], space.spectrum[-1]])
+    ax.set_xlim([spectrum[0], spectrum[-1]])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
     plt.tight_layout()
     plt.show()
 
+
+def plotStage3Stockman():
+    '''
+    '''
     fig = plt.figure()
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
     for key in stage3:
-        ax.plot(space.spectrum, stage3[key], c=key)
+        ax.plot(spectrum, stage3[key], c=key)
 
-    ax.set_xlim([space.spectrum[0], space.spectrum[-1]])
+    ax.set_xlim([spectrum[0], spectrum[-1]])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
     plt.tight_layout()
     plt.show()
 
+def plotUniqueGreenSeries():
+    '''
+    '''
     # Unique green series plot
     fig1 = plt.figure()
     fig2 = plt.figure()
@@ -41,22 +64,22 @@ def plotStockmanAnalysis(space):
     pf.TufteAxis(ax2, ['left', 'bottom'], Nticks=[5, 5])
 
     for j in [0.04, 0.34, 0.94, 2, 4, 6]:
-        stage2, stage3 = space.genStockmanAnalysis(j)
-        ax1.plot(space.spectrum, stage3['blue'], c='b', alpha=0.7)
-        ax2.plot(space.spectrum, space.Snorm -
-            j / 10 * (space.Lnorm + (0.5 * space.Mnorm)), 
+        stage2, stage3 = genStockmanAnalysis(spectrum, filters, Lnorm,
+            Mnorm, Snorm, j)
+        ax1.plot(spectrum, stage3['blue'], c='b', alpha=0.7)
+        ax2.plot(spectrum, Snorm - (j / 10 * (Lnorm + (0.5 * Mnorm))), 
             c='b', alpha=0.7)
 
-    ax1.plot(space.spectrum, np.zeros(len(space.spectrum)), 'k',
+    ax1.plot(spectrum, np.zeros(len(spectrum)), 'k',
         linewidth=1)
-    ax2.plot(space.spectrum, np.zeros(len(space.spectrum)), 'k',
+    ax2.plot(spectrum, np.zeros(len(spectrum)), 'k',
         linewidth=1)
-    ax1.set_xlim([space.spectrum[0], 650])
+    ax1.set_xlim([spectrum[0], 650])
     ax1.set_ylim([-0.7, 1.4])
     ax1.set_xlabel('wavelength (nm)')
     ax1.set_ylabel('sensitivity')
 
-    ax2.set_xlim([space.spectrum[0], 700])
+    ax2.set_xlim([spectrum[0], 700])
     ax2.set_ylim([-0.9, 1.2])
     ax2.set_xlabel('wavelength (nm)')
     ax2.set_ylabel('sensitivity')
@@ -65,22 +88,11 @@ def plotStockmanAnalysis(space):
     fig2.tight_layout()
     plt.show()
 
-def main(args):
-    '''
-    '''
-    if args.Stockman:
-        plotStockmanAnalysis()
-
 
 if __name__ == '__main__':
 
-    import argparse
+    #plotStage2Stockman()
+    #plotStage3Stockman()
+    plotUniqueGreenSeries()
 
-    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
-        derived color spaces")
-
-    parser.add_argument("-m", "--Stockman", action="store_true",
-                        help="plot Stockman model.")
-    args = parser.parse_args()
-    main(args)
 

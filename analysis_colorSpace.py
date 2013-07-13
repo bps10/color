@@ -1,17 +1,22 @@
+import matplotlib.pylab as plt
 import numpy as np
 
+from base import plot as pf
 from colorSpace import colorSpace
 
-def trichromaticAnalysis(self, Lmax=560, Smax=417):
+
+space = colorSpace()
+
+def trichromaticAnalysis(Lmax=560, Smax=417):
     '''
     '''
     M_lamMax = []
     volume = []
     for i in range(420, 561):
         M_lamMax.append(i)
-        self.genLMS('Neitz', [Lmax, i, Smax])
-        self.genConvMatrix()
-        volume.append(np.linalg.det(self.convMatrix))
+        space.genLMS('Neitz', [Lmax, i, Smax])
+        space.genConvMatrix()
+        volume.append(np.linalg.det(space.convMatrix))
     fig = plt.figure()
     ax = fig.add_subplot(111)
     pf.AxisFormat()
@@ -37,17 +42,17 @@ def trichromaticAnalysis(self, Lmax=560, Smax=417):
     plt.tight_layout()
     plt.show()
 
-def tetrachromaticAnalysis(self, Lmax=560, Mmax=530, Smax=417):
+def tetrachromaticAnalysis(Lmax=560, Mmax=530, Smax=417):
     '''
     '''
     X_lamMax = []
     volume = []
-    self.genLMS('Neitz', [Lmax, Mmax, Smax])
+    space.genLMS('Neitz', [Lmax, Mmax, Smax])
     
     for i in range(300, 850):
         X_lamMax.append(i)
         
-        tetraSystem = self.genTetraConvMatrix(i)
+        tetraSystem = space.genTetraConvMatrix(i)
         volume.append(abs(np.linalg.det(tetraSystem)))
         '''
         if i % 10 == 0:
@@ -78,15 +83,6 @@ def tetrachromaticAnalysis(self, Lmax=560, Mmax=530, Smax=417):
     plt.tight_layout()
     plt.show()
 
-   
-def main(args):
-    '''
-    '''
-    if args.tri:
-        trichromaticAnalysis()
-    
-    if args.tetra:
-        tetrachromaticAnalysis()
 
 
 if __name__ == '__main__':
@@ -101,4 +97,9 @@ if __name__ == '__main__':
     parser.add_argument("-e", "--tetra", action="store_true",
                         help="tetrachromatic analysis plot")   
     args = parser.parse_args()
-    main(args)
+
+    if args.tri:
+        trichromaticAnalysis()
+    
+    if args.tetra:
+        tetrachromaticAnalysis()
