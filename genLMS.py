@@ -12,8 +12,8 @@ def genLMS(spectrum, filters, fundamental='neitz', LMSpeaks=[559.0, 530.0, 419.0
         print 'LMSpeaks must be length 3! Using defaults: 559, 530, 417nm'
         LMSpeaks = [559.0, 530.0, 421.0]
  
-    minLam = np.max(spectrum)
-    maxLam = np.min(spectrum) 
+    minLam = np.min(spectrum)
+    maxLam = np.max(spectrum) 
     step = spectrum[1] - spectrum[0]
 
     if fundamental.lower() == 'stockman':
@@ -22,6 +22,7 @@ def genLMS(spectrum, filters, fundamental='neitz', LMSpeaks=[559.0, 530.0, 419.0
         LS = sens[:, 0]
         MS = sens[:, 1]
         SS = sens[:, 2]
+        print 'here'
 
         Lresponse = LS * spectrum
         Mresponse = MS * spectrum
@@ -47,7 +48,7 @@ def genLMS(spectrum, filters, fundamental='neitz', LMSpeaks=[559.0, 530.0, 419.0
                                          maxLam, step)
         SS = ss.neitz(LMSpeaks[2], 0.4, False, minLam, 
                                          maxLam, step)
-                                        
+                            
         Lresponse = LS / filters * spectrum
         Mresponse = MS / filters * spectrum
         Sresponse = SS / filters * spectrum
@@ -63,15 +64,3 @@ def genLMS(spectrum, filters, fundamental='neitz', LMSpeaks=[559.0, 530.0, 419.0
     	return Lresponse, Mresponse, Sresponse
     if not remove_filters:
     	return LS, MS, SS
-
-
-def getStockmanFilter(minLambda=390, maxLambda=770, RETURN_SPECTRUM=False):
-    '''
-    '''
-    filters, spectrum = filters.stockman(minLambda=minLambda, 
-        maxLambda=maxLambda, RETURN_SPECTRUM=True, 
-        resolution=1)
-    if RETURN_SPECTRUM:
-    	return filters, spectrum
-    return filters
-

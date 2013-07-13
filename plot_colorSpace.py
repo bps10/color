@@ -1,7 +1,18 @@
+#! /usr/bin/env python
 import matplotlib.pylab as plt
 import numpy as np
 
+from base import plot as pf
 from colorSpace import colorSpace
+
+
+def plotConeSpace():
+    '''
+    '''
+    space = colorSpace(fundamental='neitz',
+                             LMSpeaks=[559.0, 530.0, 421.0])
+    space._plotColorSpace(space.Lnorm, space.Mnorm, space.spectrum)
+    plt.show()
 
 def plotLUV():
     '''
@@ -149,71 +160,6 @@ def plotCIE():
                         transform=space.cs_ax.transAxes)
         plt.tight_layout()
         plt.show()        
-            
-def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz']):
-    '''
-    '''
-    space = colorSpace(LMSpeaks=[559.0, 530.0, 421.0])      
-    space.genStockmanFilter()
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    pf.AxisFormat()
-    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-    style = ['-', '--', '-.']
-    for i, condition in enumerate(compare):
-        
-        space.genLMS(fundamental=condition)
-        
-        ax.plot(space.spectrum, space.Lnorm, 'r' + style[i], linewidth=2)
-        ax.plot(space.spectrum, space.Mnorm, 'g' + style[i], linewidth=2)
-        ax.plot(space.spectrum, space.Snorm, 'b' + style[i], linewidth=2)
-    #ax.set_ylim([-0.01, 1.01])
-    ax.set_xlim([380, 781])
-    ax.set_xlabel('wavelength (nm)')
-    ax.set_ylabel('sensitivity')
-    plt.tight_layout()
-    plt.show()
-
-def plotFilters():
-    '''
-    '''
-    space = colorSpace()
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    pf.AxisFormat()
-    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-    ax.semilogy(space.spectrum, space.filters, 'k', linewidth=2)
-    ax.set_ylabel('log density')
-    ax.set_xlabel('wavelength (nm)')
-    ax.set_xlim([380, 781])
-    ax.set_ylim([-10, max(space.filters)])
-    plt.tight_layout()
-    plt.show()
-
-def plotSpecSens():
-    '''
-        '''
-    space = colorSpace()
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    pf.AxisFormat()
-    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-    ax.plot(space.spectrum, space.Lnorm, 'r', linewidth=2)
-    ax.plot(space.spectrum, space.Lc, 'r--', linewidth=2)
-    ax.plot(space.spectrum, space.Mnorm, 'g', linewidth=2)
-    ax.plot(space.spectrum, space.Mc, 'g--', linewidth=2)
-    ax.plot(space.spectrum, space.Snorm, 'b', linewidth=2)
-    ax.plot(space.spectrum, space.Sc, 'b--', linewidth=2)
-    
-    ax.set_ylim([-0.01, 1.01])
-    ax.set_xlim([380, 781])
-    ax.set_xlabel('wavelength (nm)')
-    ax.set_ylabel('sensitivity')
-    plt.tight_layout()
-    plt.show()
 
 def plotCMFs():
     '''
@@ -364,3 +310,88 @@ def genStockmanAnalysis(scale=0.34):
 
     return stage2, stage3
 
+def main(args):
+    '''
+    '''
+    if args.Compare:
+        plotCompare()
+
+    if args.Filters:
+        plotFilters()
+
+    if args.SpecSens:
+        plotSpecSens()
+
+    if args.CMFs:
+        plotCMFs()
+    
+    if args.coeff:
+        plotcoeff()
+    
+    if args.ColorSpace:
+        plotColorSpace()
+    
+    if args.ConfusionLines:
+        plotConfusionLines()
+
+    if args.BYsystem:
+        plotBYsystem(False)
+
+    if args.RGsystem:
+        plotRGsystem(False)
+
+    if args.Kaiser:
+        plotKaiser(neitz=True, stockman=True)
+
+    if args.Stockman:
+        plotStockmanAnalysis()
+    
+    if args.tri:
+        trichromaticAnalysis()
+    
+    if args.tetra:
+        tetrachromaticAnalysis()
+    
+    if args.ConeSpace:
+        plotConeSpace()
+    
+    if args.LUV:
+        plotLUV()
+
+
+if __name__ == '__main__':
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
+        derived color spaces")
+    
+
+    parser.add_argument("-y", "--CMFs", action="store_true",
+                        help="plot color matching functions")    
+    parser.add_argument("-f", "--coeff", action="store_true",
+                        help="plot x,y,z coefficients")
+    parser.add_argument("-i", "--ColorSpace", action="store_true",
+                        help="plot color space")
+    parser.add_argument("-c", "--ConfusionLines", action="store_true",
+                        help="plot color space with confusion lines")
+    parser.add_argument("-q", "--BYsystem", action="store_true",
+                        help="plot blue-yellow system on color space")   
+    parser.add_argument("-p", "--RGsystem", action="store_true",
+                        help="plot red-green system on color space") 
+
+    parser.add_argument("-k", "--Kaiser", action="store_true",
+                        help="plot Kaiser data in Neitz or CIE space")
+    parser.add_argument("-m", "--Stockman", action="store_true",
+                        help="plot Stockman model.")
+    parser.add_argument("-t", "--tri", action="store_true",
+                        help="trichromatic analysis plot")
+    parser.add_argument("-e", "--tetra", action="store_true",
+                        help="tetrachromatic analysis plot")   
+    parser.add_argument("-o", "--ConeSpace", action="store_true",
+                        help="displace cone space plot")
+    parser.add_argument("-l", "--LUV", action="store_true",
+                        help="display best fit LUV space") 
+    
+    args = parser.parse_args()
+    main(args)
