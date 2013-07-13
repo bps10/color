@@ -67,6 +67,8 @@ def plotUniqueGreenSeries():
         stage2, stage3 = genStockmanAnalysis(spectrum, filters, Lnorm,
             Mnorm, Snorm, j)
         ax1.plot(spectrum, stage3['blue'], c='b', alpha=0.7)
+
+    for j in np.arange(0.1, 5, 0.75):
         ax2.plot(spectrum, Snorm - (j / 10 * (Lnorm + (0.5 * Mnorm))), 
             c='b', alpha=0.7)
 
