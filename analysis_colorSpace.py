@@ -77,3 +77,28 @@ def tetrachromaticAnalysis(self, Lmax=560, Mmax=530, Smax=417):
     
     plt.tight_layout()
     plt.show()
+
+   
+def main(args):
+    '''
+    '''
+    if args.tri:
+        trichromaticAnalysis()
+    
+    if args.tetra:
+        tetrachromaticAnalysis()
+
+
+if __name__ == '__main__':
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
+        derived color spaces")
+    
+    parser.add_argument("-t", "--tri", action="store_true",
+                        help="trichromatic analysis plot")
+    parser.add_argument("-e", "--tetra", action="store_true",
+                        help="tetrachromatic analysis plot")   
+    args = parser.parse_args()
+    main(args)

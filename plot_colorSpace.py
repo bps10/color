@@ -313,14 +313,6 @@ def genStockmanAnalysis(scale=0.34):
 def main(args):
     '''
     '''
-    if args.Compare:
-        plotCompare()
-
-    if args.Filters:
-        plotFilters()
-
-    if args.SpecSens:
-        plotSpecSens()
 
     if args.CMFs:
         plotCMFs()
@@ -339,18 +331,6 @@ def main(args):
 
     if args.RGsystem:
         plotRGsystem(False)
-
-    if args.Kaiser:
-        plotKaiser(neitz=True, stockman=True)
-
-    if args.Stockman:
-        plotStockmanAnalysis()
-    
-    if args.tri:
-        trichromaticAnalysis()
-    
-    if args.tetra:
-        tetrachromaticAnalysis()
     
     if args.ConeSpace:
         plotConeSpace()
@@ -379,15 +359,6 @@ if __name__ == '__main__':
                         help="plot blue-yellow system on color space")   
     parser.add_argument("-p", "--RGsystem", action="store_true",
                         help="plot red-green system on color space") 
-
-    parser.add_argument("-k", "--Kaiser", action="store_true",
-                        help="plot Kaiser data in Neitz or CIE space")
-    parser.add_argument("-m", "--Stockman", action="store_true",
-                        help="plot Stockman model.")
-    parser.add_argument("-t", "--tri", action="store_true",
-                        help="trichromatic analysis plot")
-    parser.add_argument("-e", "--tetra", action="store_true",
-                        help="tetrachromatic analysis plot")   
     parser.add_argument("-o", "--ConeSpace", action="store_true",
                         help="displace cone space plot")
     parser.add_argument("-l", "--LUV", action="store_true",

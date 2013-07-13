@@ -35,4 +35,24 @@ def genKaiser(self, neitz=False):
         sub1_Neitz = s1_xyz                     
         sub2_Neitz = s2_xyz 
                     
-    return sub1_Neitz, sub2_Neitz, jv     
+    return sub1_Neitz, sub2_Neitz, jv   
+
+    
+def main(args):
+    '''
+    '''
+    if args.Kaiser:
+        plotKaiser(neitz=True, stockman=True)  
+
+
+if __name__ == '__main__':
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
+        derived color spaces")
+    
+    parser.add_argument("-k", "--Kaiser", action="store_true",
+                        help="plot Kaiser data in Neitz or CIE space")   
+    args = parser.parse_args()
+    main(args)

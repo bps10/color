@@ -1,3 +1,5 @@
+
+
 def plotStockmanAnalysis(space):
     '''
     '''
@@ -62,3 +64,23 @@ def plotStockmanAnalysis(space):
     fig1.tight_layout()
     fig2.tight_layout()
     plt.show()
+
+def main(args):
+    '''
+    '''
+    if args.Stockman:
+        plotStockmanAnalysis()
+
+
+if __name__ == '__main__':
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
+        derived color spaces")
+
+    parser.add_argument("-m", "--Stockman", action="store_true",
+                        help="plot Stockman model.")
+    args = parser.parse_args()
+    main(args)
+

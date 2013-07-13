@@ -22,7 +22,6 @@ def genLMS(spectrum, filters, fundamental='neitz', LMSpeaks=[559.0, 530.0, 419.0
         LS = sens[:, 0]
         MS = sens[:, 1]
         SS = sens[:, 2]
-        print 'here'
 
         Lresponse = LS * spectrum
         Mresponse = MS * spectrum
