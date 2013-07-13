@@ -13,7 +13,7 @@ filters, spectrum = op.filters.stockman(minLambda=380,
     maxLambda=maxLambda, RETURN_SPECTRUM=True, 
     resolution=1)
 Lnorm, Mnorm, Snorm = genLMS(spectrum, filters, 
-    fundamental='stockman', LMSpeaks=[559, 530, 421])
+    fundamental='stockspecsens', LMSpeaks=[559, 530, 421])
 
 stage2, stage3 = genStockmanAnalysis(spectrum, filters, Lnorm,
     Mnorm, Snorm)
@@ -91,8 +91,26 @@ def plotUniqueGreenSeries():
 
 if __name__ == '__main__':
 
-    #plotStage2Stockman()
-    #plotStage3Stockman()
-    plotUniqueGreenSeries()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Color Space: display Neitz or Stockman\
+        derived color spaces")
+    
+    parser.add_argument("-t", "--stage2", action="store_true",
+                        help="trichromatic analysis plot")
+    parser.add_argument("-m", "--stage3", action="store_true",
+                        help="tetrachromatic analysis plot") 
+    parser.add_argument("-g", "--green", action="store_true",
+                        help="tetrachromatic analysis plot")   
+    args = parser.parse_args()
+
+    if args.stage2:
+        plotStage2Stockman()
+    
+    if args.stage3:
+        plotStage3Stockman()
+
+    if args.green:
+        plotUniqueGreenSeries()
 
 
