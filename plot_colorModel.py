@@ -452,7 +452,7 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--ratio", action="store_true", 
                         help="compare stockman and neitz fundamentals")
     parser.add_argument("-m", "--model", action="store_true",
-                        help="plot lens and macula filters")
+                        help="plot color model")
     parser.add_argument("-p", "--specsens", action="store_true",
                         help="plot lens and macula filters")
     parser.add_argument("-c", "--curve", action="store_true",

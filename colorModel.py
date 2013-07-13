@@ -220,8 +220,8 @@ class colorModel():
                         
 
     def genThirdStage(self):
-        """Compute the third stage in the model
-        """
+        '''Compute the third stage in the model
+        '''
 
         percentL = self.lRatio / (self.mRatio + self.lRatio)
         percentM = self.mRatio / (self.mRatio + self.lRatio)
