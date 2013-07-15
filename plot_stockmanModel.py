@@ -99,11 +99,11 @@ if __name__ == '__main__':
         derived color spaces")
     
     parser.add_argument("-t", "--stage2", action="store_true",
-                        help="trichromatic analysis plot")
+                        help="plot stage 2 of the stockman model")
     parser.add_argument("-m", "--stage3", action="store_true",
-                        help="tetrachromatic analysis plot") 
+                        help="plot stage 2 of the stockman model") 
     parser.add_argument("-g", "--green", action="store_true",
-                        help="tetrachromatic analysis plot")   
+                        help="plot a series of stockman models that shift green")   
     args = parser.parse_args()
 
     if args.stage2:

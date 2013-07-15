@@ -446,21 +446,19 @@ if __name__ == '__main__':
         Neitz color model")
     
     parser.add_argument("-b", "--binom", action="store_true", 
-                        help="compare stockman and neitz fundamentals")
+                        help="plot a series of binomial distributions")
     parser.add_argument("-e", "--eccen", action="store_true",
-                        help="plot lens and macula filters")
+                        help="plot unique hue as a function of eccentricity")
     parser.add_argument("-r", "--ratio", action="store_true", 
-                        help="compare stockman and neitz fundamentals")
+                        help="plot unique hue as a function of LM ratio")
     parser.add_argument("-m", "--model", action="store_true",
-                        help="plot color model")
-    parser.add_argument("-p", "--specsens", action="store_true",
-                        help="plot lens and macula filters")
+                        help="plot the neitz color model")
     parser.add_argument("-c", "--curve", action="store_true",
-                        help="plot lens and macula filters")
+                        help="plot a family of valence curves")
     parser.add_argument("-u", "--unique", action="store_true",
-                        help="plot lens and macula filters")
+                        help="plot unique hues")
     parser.add_argument("-s", "--save", action="store_true",
-                        help="plot lens and macula filters")
+                        help="save plots - not working right now")
     parser.add_argument("--LM", type=float, default=0.25,
                         help="set L:M ratio, default=0.25")
     # add default save location
