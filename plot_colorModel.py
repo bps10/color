@@ -72,6 +72,23 @@ def eccentricityAnalysis():
     plt.tight_layout()
     plt.show()
 
+
+def MetaAnalysis():
+    '''
+    '''
+    dat = np.genfromtxt('data/hueMeta_Kuehni.txt', delimiter='\t',
+        names=True, usecols= (1, 2, 3, 4, 5, 6, 7))
+    print 'hue', 'mean', 'N'
+    for name in dat.dtype.names[1:]:
+        total, weight = 0, 0
+        for i, study in enumerate(dat[name]):
+
+            if not np.isnan(study):
+                total += dat['N'][i]
+                weight += dat['N'][i] * study
+
+        print name + ': ', weight / total, total
+
 def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
                         plot=True, savefigs=False):
     '''
@@ -80,19 +97,23 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     model = cm.colorModel(q=1.300)
     
     model.genModel()
-    model.findUniqueHues()
-    uniqueHues = model.returnUniqueHues()
+    #model.findUniqueHues()
+    #uniqueHues = model.returnUniqueHues()
     carroll = cm.getCarroll_LMratios()
 
     green, yellow, blue = [], [], []
-    for subject in carroll['L']:
-        green.append(np.interp(subject, uniqueHues['LMratio'], 
-                          uniqueHues['green']))
-        yellow.append(np.interp(subject, uniqueHues['LMratio'], 
-                          uniqueHues['yellow']))
-        blue.append(np.interp(subject, uniqueHues['LMratio'],
-                              uniqueHues['blue']))
+    for i, subject in enumerate(carroll['L']):
 
+        model.genModel(
+            maxSens={'l': carroll['lPeak'][i], 'm': 530.0, 's': 417.0, },
+            ConeRatio={'fracLvM': carroll['L'][i] / 100.0, 's': 0.05, })
+        uniqueHues = model.get_current_uniqueHues()
+
+        green.append(uniqueHues['green'])
+        yellow.append(uniqueHues['yellow'])
+        blue.append(uniqueHues['blue'])
+
+    print 'hue | \t mean | \t stdv'
     print 'green: ', np.mean(green), np.std(green)
     print 'yellow: ', np.mean(yellow), np.std(yellow)
     print 'blue: ', np.mean(blue), np.std(blue)   
@@ -200,43 +221,16 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
                                                 sum(volb['count']))
         
 
-def plotModel(plotSpecSens=False, plotModel=True, plotCurveFamily=False,
+def plotModel(plotModel=True, plotCurveFamily=False,
               plotUniqueHues=False, savefigs=False, fracLvM=0.25):
     """Plot cone spectral sensitivies and first stage predictions.
     """
     
-    model = cm.colorModel()
-    model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, })
-    FirstStage = model.returnFirstStage()   
-    
-    if plotSpecSens:
-        fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-    
-        pf.AxisFormat()
-        pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[5, 5])
-    
-        ax1.plot(FirstStage['lambdas'], FirstStage['L_cones'],
-                'r', linewidth=3)
-        ax1.plot(FirstStage['lambdas'], FirstStage['M_cones'],
-                'g', linewidth=3)
-        ax1.plot(FirstStage['lambdas'], FirstStage['S_cones'],
-                'b', linewidth=3)
-        ax1.set_ylim([-0.05, 1.05])
-        ax1.set_xlim([FirstStage['wavelen']['startWave'],
-                      FirstStage['wavelen']['endWave']])
-        ax1.set_ylabel('sensitivity')
-        ax1.yaxis.set_label_coords(-0.2, 0.5)
-        ax1.set_xlabel('wavelength (nm)')
-        
-        plt.tight_layout()
-        if savefigs:
-            firsthalf = '../bps10.github.com/presentations/static/figures/'
-            secondhalf = 'colorModel/specSens.png'
-            plt.savefig(firsthalf + secondhalf)
-        plt.show()
-
     if plotCurveFamily:
+        model = cm.colorModel()
+        model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, })
+
+        FirstStage = model.returnFirstStage()   
         SecondStage = model.returnSecondStage()
         
         fig = plt.figure(figsize=(8.5, 8))
@@ -305,13 +299,18 @@ def plotModel(plotSpecSens=False, plotModel=True, plotCurveFamily=False,
         plt.show()
 
     if plotModel:
+        model = cm.colorModel()
+        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, })
+
+        FirstStage = model.returnFirstStage() 
+        ThirdStage = model.returnThirdStage()  
+
         fig = plt.figure(figsize=(8.5, 11))
         ax1 = fig.add_subplot(311)
         ax2 = fig.add_subplot(312)
         ax3 = fig.add_subplot(313)
         
-        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, })
-        ThirdStage = model.returnThirdStage()
+        
         
         pf.AxisFormat()     
         pf.TufteAxis(ax1, ['left', ], Nticks=[5, 3])
@@ -384,26 +383,35 @@ def plotModel(plotSpecSens=False, plotModel=True, plotCurveFamily=False,
         plt.show()      
     
     if plotUniqueHues:
-        model.findUniqueHues()
-        UniqueHues = model.returnUniqueHues()
+        model = cm.colorModel()
+
         fig = plt.figure(figsize=(8, 6))
-        ax1 = fig.add_subplot(111)
-        pf.AxisFormat()
-        pf.TufteAxis(ax1, ['left', 'bottom'], Nticks=[4, 5])
+        ax = fig.add_subplot(111)
+        pf.AxisFormat(linewidth=3)
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[4, 5])
 
-        #ax1.plot(UniqueHues['LMratio'], UniqueHues['red'],
-        #        'r', linewidth=3)
-        ax1.plot(UniqueHues['LMratio'], UniqueHues['green'],
-                'g', linewidth=3)
-        ax1.plot(UniqueHues['LMratio'], UniqueHues['blue'],
-                'b', linewidth=3)
-        ax1.plot(UniqueHues['LMratio'], UniqueHues['yellow'],
-                'y', linewidth=3)
+        style = ['-', '--', '-.']
+        i = 0
+        for lPeak in [559.0, 557.0, 555.0]:
 
-        ax1.set_xlim([20, 100])
-        ax1.set_ylim([460, 600])
-        ax1.set_ylabel('wavelength (nm)')
-        ax1.set_xlabel('% L vs M')
+            model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
+                maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
+            model.findUniqueHues()
+
+            UniqueHues = model.returnUniqueHues()
+
+            ax.plot(UniqueHues['LMratio'], UniqueHues['green'],
+                    'g' + style[i], label=str(int(lPeak)))
+            ax.plot(UniqueHues['LMratio'], UniqueHues['blue'],
+                    'b' + style[i], label=str(int(lPeak)))
+            ax.plot(UniqueHues['LMratio'], UniqueHues['yellow'],
+                    'y' + style[i], label=str(int(lPeak)))
+            i += 1
+
+        ax.set_xlim([20, 100])
+        ax.set_ylim([460, 600])
+        ax.set_ylabel('wavelength (nm)')
+        ax.set_xlabel('% L vs M')
 
         plt.tight_layout()
         if savefigs:
@@ -430,8 +438,10 @@ def main(args):
     if args.ratio:
         LMratiosAnalysis(Volbrecht1997=True)
 
-    plotModel(
-            plotSpecSens=args.specsens, 
+    if args.kuehni:
+        MetaAnalysis()
+
+    plotModel( 
             plotModel=args.model,
             plotCurveFamily=args.curve,
             plotUniqueHues=args.unique, 
@@ -461,6 +471,8 @@ if __name__ == '__main__':
                         help="save plots - not working right now")
     parser.add_argument("--LM", type=float, default=0.25,
                         help="set L:M ratio, default=0.25")
+    parser.add_argument("-k", "--kuehni", action='store_true',
+                        help="print Kuehni meta analysis of unique hues")
     # add default save location
 
     args = parser.parse_args()

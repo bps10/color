@@ -1,0 +1,11 @@
+Data Set	N	yellow_mean	yellow_std	green_mean	green_std	blue_mean	blue_std
+Ayama	19	574	9.6	506	10	474	6.7
+Schefrin	50	577	4.6	509	11.9	480	7
+Nerger	4	575	1.7	510	9	471	6.6
+Jordan and Mollon	97			512	13.3		
+Volbrecht	100			522	13.5		
+Pridmore	7	578	4.8	517	9.1	479	11.6
+Webster I	51	576	2	544	16	477	4.2
+Kuehni	76			505	15.6	        	        
+Webster IIA	175	580	1.4	540	13.3	479	2.3
+Webster IIB	105	576	1.7	539	20.8	472	7.4

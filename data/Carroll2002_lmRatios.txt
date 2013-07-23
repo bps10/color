@@ -1,4 +1,4 @@
-number	Exon 2	Exon 3	Exon 4	lamda max	%L	Rayleigh Match
+number	Exon 2	Exon 3	Exon 4	lPeak	%L	Rayleigh Match
 3	TIS	MVAIA	IAM	555.5	65.76	40-42
 4	TIS 	LVAIA 	IAM 	555.5	58.77	41-42
 5	TIS 	MVVIS 	IAV 	559	70.7	37.5-38.5 
