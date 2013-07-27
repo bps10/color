@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 *-*
 from __future__ import division
+import os
 import numpy as np
 import matplotlib.pylab as plt
 from math import factorial
@@ -121,7 +122,9 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     BINS = np.arange(0, 101, 6)
     if Volbrecht1997:
         BINS_G = np.arange(488, 564, 3)
-        volb = np.genfromtxt('data/Volbrecht1997.txt', delimiter='\t',
+        temp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+            'data/Volbrecht1997.txt')
+        volb = np.genfromtxt(temp, delimiter='\t',
                       dtype=None, skip_header=0, names=True)
     else:
         BINS_G = np.arange(490, 560, 5)
@@ -222,7 +225,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         
 
 def plotModel(plotModel=True, plotCurveFamily=False,
-              plotUniqueHues=False, savefigs=False, fracLvM=0.25):
+              plotUniqueHues=False, savefigs=False, fracLvM=0.25, SHOW=False):
     """Plot cone spectral sensitivies and first stage predictions.
     """
     
@@ -392,7 +395,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
 
         style = ['-', '--', '-.']
         i = 0
-        for lPeak in [559.0, 557.0, 555.0]:
+        for lPeak in [559.0, 557.25, 555.5]:
 
             model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
                 maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
@@ -418,8 +421,10 @@ def plotModel(plotModel=True, plotCurveFamily=False,
             firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/uniqueHues.png'
             plt.savefig(firsthalf + secondhalf)
-        plt.show()
-
+        if SHOW:
+            plt.show()
+        else:
+            return ax
 
 def main(args):
     '''

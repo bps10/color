@@ -1,5 +1,6 @@
 # -*- coding: utf-8 *-*
 from __future__ import division
+import os
 import numpy as np
 from scipy.optimize import fsolve
 from math import factorial
@@ -284,7 +285,9 @@ def getStockmanFilter(maxLambda=770):
 def getCarroll_LMratios():
     '''
     '''
-    return np.genfromtxt('data/Carroll2002_lmRatios.txt', 
+    temp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+        'data/Carroll2002_lmRatios.txt')
+    return np.genfromtxt(temp, 
                 delimiter='\t', dtype=None, skip_header=0, 
                 names=True)
 
