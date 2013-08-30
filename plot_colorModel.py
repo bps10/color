@@ -90,6 +90,76 @@ def MetaAnalysis():
 
         print name + ': ', weight / total, total
 
+
+def HueScaling(lPeak=559):
+    '''
+    '''
+    hues = cm.getHueScalingData(
+                ConeRatio={'fracLvM': 0.70, 's': 0.05, },
+                maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
+    
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)
+    pf.AxisFormat(linewidth=3)
+    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+    ax.plot(hues['lambdas'], hues['red'], 'r')
+    ax.plot(hues['lambdas'], hues['green'], 'g') 
+    ax.plot(hues['lambdas'], hues['blue'], 'b') 
+    ax.plot(hues['lambdas'], hues['yellow'], 'y')  
+
+    ax.set_xlabel('wavelength (nm)')
+    ax.set_ylabel('percentage')
+    ax.set_xlim([390, 750])
+
+    plt.tight_layout()
+    plt.show()
+
+
+def matching(lPeak=559, test=420, match1=485, match2=680):
+    '''
+    '''
+    ratios = np.arange(1, 100) / 100
+    prop_match = []
+    for ratio in ratios:
+        hues = cm.getHueScalingData(
+                    ConeRatio={'fracLvM': ratio, 's': 0.05, },
+                    maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
+
+        test_light = np.where(hues['lambdas'] == test)
+        match_1_ind = np.where(hues['lambdas'] == match1)
+        match_2_ind = np.where(hues['lambdas'] == match2)
+
+        light = np.array([
+            float(hues['blue'][test_light] - hues['yellow'][test_light]),
+            float(hues['red'][test_light] - hues['green'][test_light])])
+
+        a1 = float(hues['blue'][match_1_ind] - hues['yellow'][match_1_ind])
+        a2 = float(hues['blue'][match_2_ind] - hues['yellow'][match_2_ind])
+        b1 = float(hues['red'][match_1_ind] - hues['green'][match_1_ind])
+        b2 = float(hues['red'][match_2_ind] - hues['green'][match_2_ind])
+
+        system = np.array([[a1, a2],[b1, b2]])
+
+        match = np.dot(np.linalg.inv(system), light)
+
+        print match
+        prop_match.append(match[0] / (match.sum()))
+    
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)
+    pf.AxisFormat(linewidth=3)
+    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+    ax.plot(ratios * 100, prop_match)
+
+    ax.set_xlabel('%L')
+    ax.set_ylabel(('proportion (' + str(match1) + 
+        ' / ' + '(' + str(match1) + '+' + str(match2) + ')'))
+
+    plt.tight_layout()
+    plt.show()
+
 def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
                         plot=True, savefigs=False):
     '''
@@ -443,6 +513,12 @@ def main(args):
     if args.ratio:
         LMratiosAnalysis(Volbrecht1997=True)
 
+    if args.hues:
+        HueScaling()
+
+    if args.match:
+        matching()
+
     if args.kuehni:
         MetaAnalysis()
 
@@ -472,6 +548,11 @@ if __name__ == '__main__':
                         help="plot a family of valence curves")
     parser.add_argument("-u", "--unique", action="store_true",
                         help="plot unique hues")
+    parser.add_argument("-q", "--hues", action="store_true",
+                        help="plot hue scaling data")
+    parser.add_argument("-t", "--match", action="store_true",
+                        help="plot moreland match")
+
     parser.add_argument("-s", "--save", action="store_true",
                         help="save plots - not working right now")
     parser.add_argument("--LM", type=float, default=0.25,
