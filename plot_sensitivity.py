@@ -51,7 +51,7 @@ def plotFilters():
     plt.tight_layout()
     plt.show()
 
-def plotSpecSens():
+def plotSpecSens(plot_norm=False):
     '''
     '''
     Lnorm, Mnorm, Snorm = genLMS(spectrum, filters, 
@@ -63,13 +63,16 @@ def plotSpecSens():
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-    ax.plot(spectrum, Lnorm, 'r', linewidth=2)
-    ax.plot(spectrum, L, 'r--', linewidth=2)
-    ax.plot(spectrum, Mnorm, 'g', linewidth=2)
-    ax.plot(spectrum, M, 'g--', linewidth=2)
-    ax.plot(spectrum, Snorm, 'b', linewidth=2)
-    ax.plot(spectrum, S, 'b--', linewidth=2)
+
+    ax.plot(spectrum, L, 'r-')
+    ax.plot(spectrum, M, 'g-')
+    ax.plot(spectrum, S, 'b-')
     
+    if plot_norm:
+        ax.plot(spectrum, Snorm, 'b', linewidth=2)
+        ax.plot(spectrum, Mnorm, 'g', linewidth=2)
+        ax.plot(spectrum, Lnorm, 'r', linewidth=2)
+
     ax.set_ylim([-0.01, 1.01])
     ax.set_xlim([380, 781])
     ax.set_xlabel('wavelength (nm)')

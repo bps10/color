@@ -105,7 +105,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     for i, subject in enumerate(carroll['L']):
 
         model.genModel(
-            maxSens={'l': carroll['lPeak'][i], 'm': 530.0, 's': 417.0, },
+            maxSens={'l': carroll['lPeak'][i], 'm': 529.0, 's': 417.0, },
             ConeRatio={'fracLvM': carroll['L'][i] / 100.0, 's': 0.05, })
         uniqueHues = model.get_current_uniqueHues()
 
@@ -162,8 +162,8 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         ax1.plot(BINS, freq, 'k', linewidth=3)
         
         if Volbrecht1997:
-            binV, freqV = pf.histOutline(volb['count'] / sum(
-                                        volb['count']), BINS_G)
+            binV, freqV = pf.histOutline(volb['0.25deg'] / sum(
+                                        volb['0.25deg']), BINS_G)
             ax2.plot(binV, freqV, c='0.8', linewidth=3,
                              label='Volbrecht 1997')
             ax2.fill_between(binV, freqV, 0, color='0.8')
@@ -205,15 +205,13 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         #ax4.set_visible(True)
         ax3.edgecolor  = 'y'
         plt.tight_layout()
-        
-        firsthalf = '../bps10.github.com/presentations/static/figures/'
-        secondhalf = 'colorModel/uniqueHues_LMcomparison.png'
+
         if Volbrecht1997:
-            secondhalf = 'colorModel/uniqueHues_LMcomparison_Volbrecht.png'
+            savename = 'uniqueHues_LMcomparison_Volbrecht.eps'
             ax2.legend()
             
         if savefigs:
-            plt.savefig(firsthalf + secondhalf)
+            plt.savefig(savename)
         plt.show()
     
     if returnVals:
@@ -322,7 +320,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
                 'r', linewidth=3)
         ax1.set_xlim([FirstStage['wavelen']['startWave'],
                          FirstStage['wavelen']['endWave']])
-        ax1.set_ylabel('activity')
+        #ax1.set_ylabel('activity')
         ax1.yaxis.set_label_coords(-0.2, 0.5)
         ax1.set_ylim([-0.20, 0.21])
         ax1.text(0.95, 0.95, '25% L', fontsize=16,
@@ -343,7 +341,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
                 'r', linewidth=3)
         ax2.set_xlim([FirstStage['wavelen']['startWave'],
                          FirstStage['wavelen']['endWave']])
-        ax2.set_ylabel('activity')
+        ax2.set_ylabel('sensitivity')
         ax2.yaxis.set_label_coords(-0.2, 0.5)
         ax2.set_ylim([-0.20, 0.21])
         ax2.text(0.95, 0.95, '50% L', fontsize=16, 
@@ -365,7 +363,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
                 'r', linewidth=3)
         ax3.set_xlim([FirstStage['wavelen']['startWave'],
                          FirstStage['wavelen']['endWave']])
-        ax3.set_ylabel('activity')
+        #ax3.set_ylabel('activity')
         ax3.yaxis.set_label_coords(-0.2, 0.5)
         ax3.set_ylim([-0.20, 0.21])
         ax3.text(0.95, 0.95, '75% L', fontsize=16, 
@@ -436,7 +434,7 @@ def main(args):
         eccentricityAnalysis()
     
     if args.ratio:
-        LMratiosAnalysis(Volbrecht1997=True)
+        LMratiosAnalysis(Volbrecht1997=True, savefigs=args.save)
 
     if args.kuehni:
         MetaAnalysis()

@@ -129,29 +129,31 @@ class colorModel():
         return hues
 
     def genFirstStage(self, startLambda=390, endLambda=750, step=1,
-                        Out='anti-log'):
+                        Out='anti-log', OD=None):
         """Compute the first stage in the model
         """
+        if len(OD) is None:
+            OD = [0.4, 0.38, 0.3]
 
         lambdas = np.arange(startLambda, endLambda + step, step)
 
         L_cones = ss.neitz(LambdaMax=self.maxSens['l'], LOG=False,
                             StartWavelength=startLambda,
-                            OpticalDensity=0.5,
+                            OpticalDensity=OD[0],
                             EndWavelength=endLambda, 
                             resolution=step)
         L_cones /= self.lensMacula
         
         M_cones = ss.neitz(LambdaMax=self.maxSens['m'], LOG=False,
                             StartWavelength=startLambda,
-                            OpticalDensity=0.5,
+                            OpticalDensity=OD[1],
                             EndWavelength=endLambda, 
                             resolution=step)
         M_cones /= self.lensMacula
         
         S_cones = ss.neitz(LambdaMax=self.maxSens['s'], LOG=False,
                             StartWavelength=startLambda,
-                            OpticalDensity=0.4,
+                            OpticalDensity=OD[2],
                             EndWavelength=endLambda, 
                             resolution=step)
         S_cones /= self.lensMacula
