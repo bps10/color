@@ -1,5 +1,6 @@
 # -*- coding: utf-8 *-*
 from __future__ import division
+import os
 import numpy as np
 from scipy.optimize import fsolve
 from math import factorial
@@ -286,9 +287,43 @@ def getStockmanFilter(maxLambda=770):
 def getCarroll_LMratios():
     '''
     '''
-    return np.genfromtxt('data/Carroll2002_lmRatios.txt', 
+    temp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+        'data/Carroll2002_lmRatios.txt')
+    return np.genfromtxt(temp, 
                 delimiter='\t', dtype=None, skip_header=0, 
                 names=True)
+
+def getHueScalingData(ConeRatio, maxSens, scale=False, norm=False):
+    '''
+    '''
+    model = colorModel()
+    model.genModel(ConeRatio=ConeRatio, maxSens=maxSens)
+    # get valence data: returned in OFF config (red+blue)
+    FirstStage = model.returnFirstStage()
+    ThirdStage = model.returnThirdStage()
+    N = len(ThirdStage['lCenter'])
+    red = ThirdStage['mCenter'].clip(min=0)
+    green = (-1 * ThirdStage['mCenter']).clip(min=0)
+    blue = ThirdStage['lCenter'].clip(min=0)
+    yellow = (-1 * ThirdStage['lCenter']).clip(min=0)
+
+    #scale to percentage
+    if scale and not norm:
+        total = red + green + blue + yellow
+        red = red / total * 100
+        green = green / total * 100
+        blue = blue / total * 100
+        yellow = yellow / total * 100
+    if norm and not scale:
+        red /= np.max(red)
+        green /= np.max(green)
+        blue /= np.max(blue)
+        yellow /= np.max(yellow)
+
+    hues = {'red': red, 'green': green,
+            'blue': blue, 'yellow': yellow, 
+            'lambdas': FirstStage['lambdas']}
+    return hues
 
 
 def optimizeChannel(q, cones, percent, Center, test=False):
