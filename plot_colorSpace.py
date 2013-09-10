@@ -128,12 +128,46 @@ def plotcoeff():
     plt.tight_layout()
     plt.show()
 
+
 def plotColorSpace():
     '''
     '''
     space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
     space._plotColorSpace()
     plt.show()
+
+
+def plotColorSpace():
+    '''
+    '''
+    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
+    space._plotColorSpace()
+    rVal = space.rVal
+    gVal = space.gVal
+    bVal = space.bVal
+
+    for x in np.arange(-0.3, 1.1, 0.01):
+        for y in np.arange(-0.15, 1.1, 0.01):
+            if x + y <= 1 and 1 - (x + y) <= 1:
+                ## Make sure bound between 0 and 1
+                _x = _boundval(x)
+                _y = _boundval(y)
+
+                _z = 1 - (_x + _y)
+
+                space.cs_ax.plot((x), (y), 
+                    'o', c=[_x, _y, _z], 
+                    ms=10, mec='none', alpha=0.7)
+
+    plt.show()
+
+def _boundval(v):
+
+    if v > 1:
+        v = 1
+    if v < 0:
+        v = 0
+    return v
 
 def plotBYsystem(space, PRINT=False, clip=True):
     '''
