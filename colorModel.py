@@ -133,7 +133,7 @@ class colorModel():
                         Out='anti-log', OD=None):
         """Compute the first stage in the model
         """
-        if len(OD) is None:
+        if OD is None:
             OD = [0.4, 0.38, 0.3]
 
         lambdas = np.arange(startLambda, endLambda + step, step)

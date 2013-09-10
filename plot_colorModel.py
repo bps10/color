@@ -143,7 +143,6 @@ def matching(lPeak=559, test=420, match1=485, match2=680):
 
         match = np.dot(np.linalg.inv(system), light)
 
-        print match
         prop_match.append(match[0] / (match.sum()))
     
     fig = plt.figure(figsize=(8, 6))
@@ -159,6 +158,68 @@ def matching(lPeak=559, test=420, match1=485, match2=680):
 
     plt.tight_layout()
     plt.show()
+
+
+def match_v2(lPeak=559, test=420, match1=485, match2=680):
+    '''
+    '''
+    get_ind = lambda match: np.where(hues['lambdas'] == match)
+    a1 = lambda match: float(hues['blue'][match] - hues['yellow'][match])
+    b1 = lambda match: float(hues['red'][match] - hues['green'][match])
+
+    ratios = np.arange(1, 100) / 100
+    match = []
+    for ratio in ratios:
+        hues = cm.getHueScalingData(
+                    ConeRatio={'fracLvM': ratio, 's': 0.05, },
+                    maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
+
+        test_light = get_ind(test)
+        match_2_ind = get_ind(match2)
+
+        by_light = float(hues['blue'][test_light] - hues['yellow'][test_light])
+        rg_light = float(hues['red'][test_light] - hues['green'][test_light])
+
+        
+        a2 = float(hues['blue'][match_2_ind] - hues['yellow'][match_2_ind])      
+        b2 = float(hues['red'][match_2_ind] - hues['green'][match_2_ind])
+
+        sol1 = by_light - (0.1 * a2)
+        sol2 = rg_light - (0.9 * b2)
+        print sol1, sol2
+
+        solution = False
+        wvlen = 430
+        while solution is not True:
+            ind = get_ind(wvlen)
+            eq1 = (0.1 * a1(ind)) - by_light
+            eq2 = (0.9 * b1(ind)) - rg_light
+            print a1(ind), b1(ind), eq1, eq2
+            if eq1 + eq2 > 0 and eq1 + eq2 < 0.01:
+                solution = True
+            elif wvlen < 500:
+                wvlen += 1
+            else:
+                wvlen = 0
+                solution = True
+
+        ## Just find the index solution and then interpolate
+
+        match.append(wvlen)
+    
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111)
+    pf.AxisFormat(linewidth=3)
+    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
+
+    ax.plot(ratios * 100, match)
+
+    ax.set_xlabel('%L')
+    ax.set_ylabel('wavelength')
+
+    plt.tight_layout()
+    plt.show()
+
 
 def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
                         plot=True, savefigs=False):
@@ -515,7 +576,8 @@ def main(args):
         HueScaling()
 
     if args.match:
-        matching()
+        #matching()
+        match_v2()
 
     if args.kuehni:
         MetaAnalysis()
