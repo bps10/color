@@ -488,9 +488,42 @@ class colorSpace(object):
         if JuddV:
             pf.AxisFormat(FONTSIZE=10, TickSize=8)
             pf.centerAxes(self.cs_ax)
-            
-        self.cs_ax.plot(rVal, gVal, 'k', linewidth=3.5)
-        
+
+        if color:
+            import matplotlib.nxutils as nx
+            verts = []
+            for i, val in enumerate(rVal[:-10]):
+                verts.append([rVal[i], gVal[i]])
+
+            verts = np.asarray(verts)
+            white = np.linalg.norm([1 / 3, 1 / 3, 1 / 3])
+            for x in np.arange(-0.3, 1.1, 0.005):
+                for y in np.arange(-0.15, 1.1, 0.01):
+                    if x + y <= 1:
+                        if nx.points_inside_poly(np.array([[x, y]]), verts):
+
+                            _x = _boundval(x)
+                            _y = _boundval(y)
+                            _z = 1 - (_x + _y)
+
+                            norm = np.linalg.norm([x, y, 1 - (x + y)])
+                            dist = abs(norm - white)
+                            
+                            if dist <= (1 / 3):
+                                _x += ((1 / 3) - dist)
+                                _y += ((1 / 3) - dist)
+                                _z += ((1 / 3) - dist)
+
+                            self.cs_ax.plot((x), (y), 
+                                'o', c=[_x, _y, _z], 
+                                ms=6, mec='none', alpha=0.7)
+
+            self.cs_ax.plot(rVal[:-10], gVal[:-10], 'k', linewidth=5)
+            self.cs_ax.plot([rVal[0], rVal[-10]], [gVal[0], gVal[-10]], 'k', linewidth=5)
+
+        self.cs_ax.plot(rVal[:-10], gVal[:-10], 'k', linewidth=3.5)
+        self.cs_ax.plot([rVal[0], rVal[-10]], [gVal[0], gVal[-10]], 'k', linewidth=3.5)
+
         # add equi-energy location to plot
         if ee:
             self.cs_ax.plot(1.0/3.0, 1.0/3.0, 'ko', markersize=5)
@@ -502,13 +535,6 @@ class colorSpace(object):
         
         #rgb = np.reshape([self.Lnorm,self.Mnorm,self.Snorm], 
               #           [len(self.Lnorm) / 2, len(self.Lnorm) / 2, 3])
-
-        if color:
-            import clip as clip
-            rgb = clip.clip_rgb_color(
-                                np.array([self.rVal, self.gVal, self.bVal]))
-            clip.rgb_patch_plot(self.cs_ax, rgb[0], color_names=None)
-        
 
         
         # annotate plot
@@ -549,6 +575,11 @@ class colorSpace(object):
         plt.tight_layout()
         #plt.show()
 
+def _boundval(v):
 
-
+    if v > 1:
+        v = 1
+    if v < 0:
+        v = 0
+    return round(v, 5)
  
