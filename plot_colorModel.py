@@ -78,17 +78,29 @@ def MetaAnalysis():
     '''
     '''
     dat = np.genfromtxt('data/hueMeta_Kuehni.txt', delimiter='\t',
-        names=True, usecols= (1, 2, 3, 4, 5, 6, 7))
-    print 'hue', 'mean', 'N'
-    for name in dat.dtype.names[1:]:
-        total, weight = 0, 0
-        for i, study in enumerate(dat[name]):
+        names=True, usecols= (1, 2, 3, 4, 5, 6, 7, 8 , 9))
+    for name in dat.dtype.names:
+        if name[-1] is not 'N':
+            if name[:6] == 'yellow':
+                n = 'yellow'
+            if name[:5] == 'green':
+                n = 'green'
+            else:
+                n = 'blue'
+            total, weight = 0, 0
+            for i, study in enumerate(dat[name]):
 
-            if not np.isnan(study):
-                total += dat['N'][i]
-                weight += dat['N'][i] * study
+                if not np.isnan(study):
+                    total += dat[n + '_N'][i]
+                    if name[-3:] == 'std':
+                        weight += (dat[n + '_N'][i] - 1) * (study ** 2)
+                    else: 
+                        weight += dat[n + '_N'][i] * study
 
-        print name + ': ', weight / total, total
+            if name[-3:] == 'std':
+                print name + ': ', np.sqrt(weight / (total - 1)), total
+            else:
+                print name + ': ', weight / total, total
 
 
 def HueScaling(lPeak=559):
