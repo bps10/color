@@ -258,9 +258,9 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         blue.append(uniqueHues['blue'])
 
     print 'hue | \t mean | \t stdv'
-    print 'green: ', np.mean(green), np.std(green)
-    print 'yellow: ', np.mean(yellow), np.std(yellow)
-    print 'blue: ', np.mean(blue), np.std(blue)   
+    print 'green: ', np.mean(green), np.std(green, ddof=1)
+    print 'yellow: ', np.mean(yellow), np.std(yellow, ddof=1)
+    print 'blue: ', np.mean(blue), np.std(blue, ddof=1)   
                        
     BINS = np.arange(0, 101, 6)
     if Volbrecht1997:
@@ -297,19 +297,19 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         ax3.spines['bottom'].set_position(('outward', 55))
         
         
-        BINS, freq = pf.histOutline(freq / sum(freq), BINS)
-        BINS_Gout, freqGreen = pf.histOutline(freqGreen / sum(freqGreen), 
+        BINS, freq = pf.histOutline(freq / np.sum(freq), BINS)
+        BINS_Gout, freqGreen = pf.histOutline(freqGreen / np.sum(freqGreen), 
                                            BINS_G)
         BINS_Yout, freqYellow = pf.histOutline(
-                                freqYellow / sum(freqYellow), BINS_Y)
-        BINS_Bout, freqBlue = pf.histOutline(freqBlue / sum(freqBlue), 
+                                freqYellow / np.sum(freqYellow), BINS_Y)
+        BINS_Bout, freqBlue = pf.histOutline(freqBlue / np.sum(freqBlue), 
                                             BINS_B)
 
         ax1.plot(BINS, freq, 'k', linewidth=3)
         
         if Volbrecht1997:
-            binV, freqV = pf.histOutline(volb['0.25deg'] / sum(
-                                        volb['0.25deg']), BINS_G)
+            binV, freqV = pf.histOutline(volb['025deg'] / np.sum(
+                                        volb['025deg']), BINS_G)
             ax2.plot(binV, freqV, c='0.8', linewidth=3,
                              label='Volbrecht 1997')
             ax2.fill_between(binV, freqV, 0, color='0.8')
@@ -320,7 +320,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         ax4.plot(BINS_Bout, freqBlue, 'b', linewidth=3) 
           
         ax1.set_xlim([0, 100])
-        ax1.set_ylim([-0.002, max(freq) + 0.01])
+        ax1.set_ylim([-0.002, np.max(freq) + 0.01])
         ax1.set_ylabel('proportion')
         ax1.set_xlabel('% L v M')
         ax1.yaxis.set_label_coords(-0.2, 0.5)
@@ -331,16 +331,16 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         ax3.set_xlim([514, 590])
         ax4.set_xlim([460, 536])
         if Volbrecht1997:
-            ax2.set_ylim([-0.002, max(max(freqV), max(freqGreen)) + 0.01])
+            ax2.set_ylim([-0.002, np.max(np.max(freqV), np.max(freqGreen)) + 0.01])
         else:
-            ax2.set_ylim([-0.002, max(freqGreen) + 0.01])
+            ax2.set_ylim([-0.002, np.max(freqGreen) + 0.01])
         ax2.yaxis.set_label_coords(-0.2, 0.5)
         
         ax3.set_ylabel('proportion')
         #ax3.set_xlabel('unique yellow (nm)')        
         #ax3.set_xlim([460, 590])
         ax3.tick_params(axis='x', colors='y')
-        ax3.set_ylim([-0.005, max(max(freqBlue), max(freqYellow)) + 0.02])
+        ax3.set_ylim([-0.005, np.max(np.max(freqBlue), np.max(freqYellow)) + 0.02])
         ax3.yaxis.set_label_coords(-0.2, 0.5)
         
         ax4.tick_params(axis='x', colors = 'b')
@@ -362,7 +362,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
     
     if returnVals:
         return freq, freqGreen, freqYellow, (volb['count'] / 
-                                                sum(volb['count']))
+                                                np.sum(volb['count']))
         
 
 def plotModel(plotModel=True, plotCurveFamily=False,
