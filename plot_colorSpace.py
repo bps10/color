@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import matplotlib.pylab as plt
+
 import numpy as np
 
 from base import plot as pf
@@ -128,12 +129,14 @@ def plotcoeff():
     plt.tight_layout()
     plt.show()
 
-def plotColorSpace():
+
+def plotColorSpace(color):
     '''
     '''
     space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
-    space._plotColorSpace()
+    space._plotColorSpace(color=color)
     plt.show()
+
 
 def plotBYsystem(space, PRINT=False, clip=True):
     '''
@@ -225,7 +228,7 @@ def main(args):
         plotcoeff()
     
     if args.ColorSpace:
-        plotColorSpace()
+        plotColorSpace(color=args.color)
     
     if args.ConfusionLines:
         plotConfusionLines()
@@ -267,6 +270,8 @@ if __name__ == '__main__':
                         help="displace cone space plot")
     parser.add_argument("-l", "--LUV", action="store_true",
                         help="display best fit LUV space") 
+    parser.add_argument("--color", action="store_true",
+                        help="add color to Neitz color space")
     
     args = parser.parse_args()
     main(args)
