@@ -12,13 +12,13 @@ from base import optics as op
 class colorModel():
     '''
     '''
-    def __init__(self, center_cones=1, q=1.300):
+    def __init__(self, center_cones=1, q=1.300, age=None):
 
         self.test = False
         self.step = 1
         self._q = q
         self.center_cones = center_cones
-        self.lensMacula = getStockmanFilter(750)
+        self.lensMacula = getLensMaculaFilter(maxLambda=750, age=age)
 
     def findConeRatios(self, fracLvM, fracS=None):
         '''
@@ -129,7 +129,7 @@ class colorModel():
             }
         return hues
 
-    def genFirstStage(self, startLambda=390, endLambda=750, step=1,
+    def genFirstStage(self, startLambda=400, endLambda=750, step=1,
                         Out='anti-log'):
         """Compute the first stage in the model
         """
@@ -138,21 +138,21 @@ class colorModel():
 
         L_cones = ss.neitz(LambdaMax=self.maxSens['l'], LOG=False,
                             StartWavelength=startLambda,
-                            OpticalDensity=0.5,
+                            OpticalDensity=0.25,
                             EndWavelength=endLambda, 
                             resolution=step)
         L_cones /= self.lensMacula
         
         M_cones = ss.neitz(LambdaMax=self.maxSens['m'], LOG=False,
                             StartWavelength=startLambda,
-                            OpticalDensity=0.5,
+                            OpticalDensity=0.25,
                             EndWavelength=endLambda, 
                             resolution=step)
         M_cones /= self.lensMacula
         
         S_cones = ss.neitz(LambdaMax=self.maxSens['s'], LOG=False,
                             StartWavelength=startLambda,
-                            OpticalDensity=0.4,
+                            OpticalDensity=0.25,
                             EndWavelength=endLambda, 
                             resolution=step)
         S_cones /= self.lensMacula
@@ -273,12 +273,22 @@ class colorModel():
         return self.uniqueHues
 
 
-def getStockmanFilter(maxLambda=770):
+def getLensMaculaFilter(maxLambda=750, age=None):
     '''
     '''
-    filters = op.filters.stockman(minLambda=380, 
-        maxLambda=maxLambda, RETURN_SPECTRUM=False, 
-        resolution=1)
+    if age is not None:
+        macula = op.filters.stockman(minLambda=400, 
+            maxLambda=maxLambda, RETURN_SPECTRUM=False, 
+            ONLY_MACULA=True, resolution=1)
+        spectrum = np.arange(400, 751, 1)
+        lens = op.filters.lens_age_correction(age, spectrum)
+        filters = 10.0 ** (lens + macula)
+
+    else:
+        filters = op.filters.stockman(minLambda=400, 
+            maxLambda=maxLambda, RETURN_SPECTRUM=False, 
+            resolution=1)
+
     return filters
 
 
