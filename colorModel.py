@@ -37,14 +37,14 @@ class colorModel():
                 raise IOError('cone ratios must sum to 1.0!')
 
     def genModel(self, ConeRatio={'fracLvM': 0.75, 's': 0.05, },
-                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
+                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }, OD=None):
         '''
         '''
         self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
         self.maxSens = maxSens
         self.fracLvM = ConeRatio['fracLvM']
         
-        self.genFirstStage()
+        self.genFirstStage(OD=OD)
         self.genSecondStage()
         self.genThirdStage()
 
