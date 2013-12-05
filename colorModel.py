@@ -12,13 +12,13 @@ from base import optics as op
 class colorModel():
     '''
     '''
-    def __init__(self, center_cones=1, q=1.300):
+    def __init__(self, center_cones=1, q=1.300, age=None):
 
         self.test = False
         self.step = 1
         self._q = q
         self.center_cones = center_cones
-        self.lensMacula = getStockmanFilter(750)
+        self.lensMacula = getLensMaculaFilter(maxLambda=750, age=age)
 
     def findConeRatios(self, fracLvM, fracS=None):
         '''
@@ -37,14 +37,14 @@ class colorModel():
                 raise IOError('cone ratios must sum to 1.0!')
 
     def genModel(self, ConeRatio={'fracLvM': 0.75, 's': 0.05, },
-                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }):
+                 maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }, OD=None):
         '''
         '''
         self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
         self.maxSens = maxSens
         self.fracLvM = ConeRatio['fracLvM']
         
-        self.genFirstStage()
+        self.genFirstStage(OD=OD)
         self.genSecondStage()
         self.genThirdStage()
 
@@ -275,12 +275,21 @@ class colorModel():
         return self.uniqueHues
 
 
-def getStockmanFilter(maxLambda=770):
+def getLensMaculaFilter(maxLambda=750, age=None):
     '''
     '''
-    filters = op.filters.stockman(minLambda=390, 
-        maxLambda=maxLambda, RETURN_SPECTRUM=False, 
-        resolution=1)
+    if age is not None:
+        macula = op.filters.stockman(minLambda=390, 
+            maxLambda=maxLambda, RETURN_SPECTRUM=False, 
+            ONLY_MACULA=True, resolution=1)
+        spectrum = np.arange(390, 751, 1)
+        lens = op.filters.lens_age_correction(age, spectrum)
+        filters = 10.0 ** (lens + macula)
+
+    else:
+        filters = op.filters.stockman(minLambda=390, 
+            maxLambda=maxLambda, RETURN_SPECTRUM=False, 
+            resolution=1)
     return filters
 
 
