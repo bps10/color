@@ -366,13 +366,18 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         
 
 def plotModel(plotModel=True, plotCurveFamily=False,
-              plotUniqueHues=False, savefigs=False, fracLvM=0.25, SHOW=False):
+              plotUniqueHues=False, savefigs=False, 
+              fracLvM=0.25, SHOW=False, OD=None, age=None,
+              maxSens=None):
     """Plot cone spectral sensitivies and first stage predictions.
     """
-    
+    if maxSens is None:
+        maxSens = {'l': 559.0, 'm': 530.0, 's': 417.0, }
+
     if plotCurveFamily:
-        model = cm.colorModel()
-        model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, })
+        model = cm.colorModel(age=age)
+        model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, },
+            maxSens=maxSens, OD=OD)
 
         FirstStage = model.returnFirstStage()   
         SecondStage = model.returnSecondStage()
@@ -443,8 +448,9 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         plt.show()
 
     if plotModel:
-        model = cm.colorModel()
-        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, })
+        model = cm.colorModel(age=age)
+        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
+            maxSens=maxSens, OD=OD)
 
         FirstStage = model.returnFirstStage() 
         ThirdStage = model.returnThirdStage()  
@@ -474,7 +480,8 @@ def plotModel(plotModel=True, plotCurveFamily=False,
             verticalalignment='top',
             transform=ax1.transAxes)
 
-        model.genModel(ConeRatio={'fracLvM': 0.5, 's': 0.05, })
+        model.genModel(ConeRatio={'fracLvM': 0.5, 's': 0.05, },
+            maxSens=maxSens, OD=OD)
         ThirdStage = model.returnThirdStage()
         
         pf.AxisFormat()     
@@ -496,7 +503,8 @@ def plotModel(plotModel=True, plotCurveFamily=False,
             transform=ax2.transAxes)
 
 
-        model.genModel(ConeRatio={'fracLvM': 0.75, 's': 0.05, })
+        model.genModel(ConeRatio={'fracLvM': 0.75, 's': 0.05, },
+            maxSens=maxSens, OD=OD)
         ThirdStage = model.returnThirdStage()
         
         pf.AxisFormat()     
@@ -527,7 +535,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         plt.show()      
     
     if plotUniqueHues:
-        model = cm.colorModel()
+        model = cm.colorModel(age=age)
 
         fig = plt.figure(figsize=(8, 6))
         ax = fig.add_subplot(111)
@@ -539,7 +547,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         for lPeak in [559.0, 557.25, 555.5]:
 
             model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
-                maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
+                maxSens=maxSens, OD=OD)
             model.findUniqueHues()
 
             UniqueHues = model.returnUniqueHues()
