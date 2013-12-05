@@ -134,7 +134,7 @@ class colorModel():
         """Compute the first stage in the model
         """
         if OD is None:
-            OD = [0.4, 0.38, 0.3]
+            OD = [0.4, 0.38, 0.33]
 
         lambdas = np.arange(startLambda, endLambda + step, step)
 
@@ -278,7 +278,7 @@ class colorModel():
 def getStockmanFilter(maxLambda=770):
     '''
     '''
-    filters = op.filters.stockman(minLambda=380, 
+    filters = op.filters.stockman(minLambda=390, 
         maxLambda=maxLambda, RETURN_SPECTRUM=False, 
         resolution=1)
     return filters
