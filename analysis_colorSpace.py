@@ -15,6 +15,7 @@ def trichromaticAnalysis(Lmax=560, Smax=417):
     for i in range(420, 561):
         M_lamMax.append(i)
         space.genLMS('Neitz', [Lmax, i, Smax])
+        space.setLights('stiles and burch')
         space.genConvMatrix()
         volume.append(np.linalg.det(space.convMatrix))
     fig = plt.figure()
