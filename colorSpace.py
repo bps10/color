@@ -36,7 +36,7 @@ class colorSpace(object):
     def genStockmanFilter(self, maxLambda=770):
         '''
         '''
-        self.filters, self.spectrum = op.filters.stockman(minLambda=380, 
+        self.filters, self.spectrum = op.filters.stockman(minLambda=390, 
             maxLambda=maxLambda, RETURN_SPECTRUM=True, 
             resolution=1)
 

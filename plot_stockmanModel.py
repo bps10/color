@@ -9,7 +9,7 @@ from genLMS import genLMS
 
 
 maxLambda = 770
-filters, spectrum = op.filters.stockman(minLambda=380, 
+filters, spectrum = op.filters.stockman(minLambda=390, 
     maxLambda=maxLambda, RETURN_SPECTRUM=True, 
     resolution=1)
 Lnorm, Mnorm, Snorm = genLMS(spectrum, filters, 
