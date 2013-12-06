@@ -367,7 +367,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
 
 def plotModel(plotModel=True, plotCurveFamily=False,
               plotUniqueHues=False, savefigs=False, 
-              fracLvM=0.25, SHOW=False, OD=None, age=None,
+              fracLvM=0.25, SHOW=True, OD=None, age=None,
               maxSens=None):
     """Plot cone spectral sensitivies and first stage predictions.
     """
@@ -547,7 +547,8 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         for lPeak in [559.0, 557.25, 555.5]:
 
             model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
-                maxSens=maxSens, OD=OD)
+                maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, }, 
+                OD=OD)
             model.findUniqueHues()
 
             UniqueHues = model.returnUniqueHues()
