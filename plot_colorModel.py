@@ -546,8 +546,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         i = 0
         for lPeak in [559.0, 557.25, 555.5]:
 
-            model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
-                maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, }, 
+            model.genModel(maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, }, 
                 OD=OD)
             model.findUniqueHues()
 

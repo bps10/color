@@ -12,13 +12,12 @@ from base import optics as op
 class colorModel():
     '''
     '''
-    def __init__(self, center_cones=1, q=1.300, age=None):
+    def __init__(self, center_cones=1, q=1.300, age=None, mac_const=1.0):
 
         self.test = False
-        self.step = 1
         self._q = q
         self.center_cones = center_cones
-        self.lensMacula = getLensMaculaFilter(maxLambda=750, age=age)
+        self.lensMacula = getLensMaculaFilter(maxLambda=750, age=age, k=mac_const)
 
     def findConeRatios(self, fracLvM, fracS=None):
         '''
@@ -58,7 +57,7 @@ class colorModel():
             self.genSecondStage()
         else:
 
-            for i in range(0, 101, self.step):
+            for i in range(0, 101):
 
                 self.findConeRatios(fracLvM=(i / 100.))
                 self.genThirdStage()
@@ -184,9 +183,9 @@ class colorModel():
                             'percent': {}, 
                             'center_cones': self.center_cones, }
 
-        s, _m, _l, i = 5, 0, 0, 0
-        for m in range(0, 101, self.step):
-            for l in range(0, 101, self.step): 
+        s, _m, _l, i = self.sRatio * 100, 0, 0, 0
+        for m in range(0, 101):
+            for l in range(0, 101): 
                 if (l + m + s) == 100:
                     percent = {'s': s, 'm': m, 'l': l, }
                     
@@ -214,7 +213,6 @@ class colorModel():
                                                     Center=center_cones)
                             
                             self.SecondStage['lmsV_M'][_m][Mcenter] = lmsV_M
-                            
 
                     self.SecondStage['percent'][i] = percent
                     _m += 1
@@ -239,20 +237,18 @@ class colorModel():
             # surround probabilities:
             lNum = self.SecondStage['percent'][i]['l']
             mNum = self.SecondStage['percent'][i]['m']
-            probSur = binom(lNum, lNum + mNum, percentL)                            
+            probSur = binom(lNum, lNum + mNum, percentL)
             self.SecondStage['percent'][i]['probSurround'] = probSur
 
             for num_L, lCenter in self.SecondStage['lmsV_L'][i].iteritems():
 
                 centerProb = binom(num_L, self.center_cones, percentL)
-                self.ThirdStage['lCenter'] += (lCenter * 
-                                                centerProb * probSur) 
+                self.ThirdStage['lCenter'] += (lCenter * probSur) 
 
             for num_M, mCenter in self.SecondStage['lmsV_M'][i].iteritems():
 
                 centerProb = binom(num_M, self.center_cones, percentM)
-                self.ThirdStage['mCenter'] += (mCenter * 
-                                                centerProb * probSur) 
+                self.ThirdStage['mCenter'] += (mCenter * probSur) 
 
     def returnFirstStage(self):
         '''
@@ -275,21 +271,25 @@ class colorModel():
         return self.uniqueHues
 
 
-def getLensMaculaFilter(maxLambda=750, age=None):
+def getLensMaculaFilter(maxLambda=750, age=None, k=1.0):
     '''
     '''
     if age is not None:
         macula = op.filters.stockman(minLambda=390, 
             maxLambda=maxLambda, RETURN_SPECTRUM=False, 
             ONLY_MACULA=True, resolution=1)
-        spectrum = np.arange(390, 751, 1)
+        spectrum = np.arange(390, maxLambda + 1, 1)
         lens = op.filters.lens_age_correction(age, spectrum)
-        filters = 10.0 ** (lens + macula)
-
+        
     else:
-        filters = op.filters.stockman(minLambda=390, 
+        macula = op.filters.stockman(minLambda=390, 
             maxLambda=maxLambda, RETURN_SPECTRUM=False, 
-            resolution=1)
+            ONLY_MACULA=True, resolution=1)
+        lens = op.filters.stockman(minLambda=390, 
+            maxLambda=maxLambda, RETURN_SPECTRUM=False, 
+            ONLY_LENS=True, resolution=1)
+        
+    filters = 10.0 ** (lens + (k * macula))
     return filters
 
 
@@ -335,7 +335,7 @@ def getHueScalingData(ConeRatio, maxSens, scale=False, norm=False):
     return hues
 
 
-def optimizeChannel(q, cones, percent, Center, test=False):
+def optimizeChannel(q, cones, percent, Center):
     '''
     '''
     m_ = percent['m'] / (percent['m'] + percent['l'])
@@ -349,12 +349,6 @@ def optimizeChannel(q, cones, percent, Center, test=False):
     err = lambda w, Center: (fun(w, Center)).sum()
     w = fsolve(err, 1, args=(Center))
     out = fun(w, Center)
-
-    if test:
-        temp = err(w, Center)
-        if temp > 1e-8:
-            print percent
-            raise ValueError('error function not minimized properly')
 
     return out
 
