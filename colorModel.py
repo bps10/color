@@ -243,12 +243,12 @@ class colorModel():
             for num_L, lCenter in self.SecondStage['lmsV_L'][i].iteritems():
 
                 centerProb = binom(num_L, self.center_cones, percentL)
-                self.ThirdStage['lCenter'] += (lCenter * probSur) 
+                self.ThirdStage['lCenter'] += (lCenter * centerProb * probSur) 
 
             for num_M, mCenter in self.SecondStage['lmsV_M'][i].iteritems():
 
                 centerProb = binom(num_M, self.center_cones, percentM)
-                self.ThirdStage['mCenter'] += (mCenter * probSur) 
+                self.ThirdStage['mCenter'] += (mCenter * centerProb * probSur) 
 
     def returnFirstStage(self):
         '''
