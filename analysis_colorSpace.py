@@ -19,6 +19,7 @@ def trichromaticAnalysis(Lmax=560, Smax=417):
         space.genConvMatrix()
         volume.append(np.linalg.det(space.convMatrix))
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -40,7 +41,6 @@ def trichromaticAnalysis(Lmax=560, Smax=417):
         verticalalignment='top',
         transform=ax.transAxes)
     
-    plt.tight_layout()
     plt.show()
 
 def tetrachromaticAnalysis(Lmax=560, Mmax=530, Smax=417):
@@ -60,6 +60,7 @@ def tetrachromaticAnalysis(Lmax=560, Mmax=530, Smax=417):
             print i, 'nm, rank: ', np.linalg.matrix_rank(tetraSystem)
         '''
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -81,7 +82,6 @@ def tetrachromaticAnalysis(Lmax=560, Mmax=530, Smax=417):
         verticalalignment='top',
         transform=ax.transAxes)
     
-    plt.tight_layout()
     plt.show()
 
 

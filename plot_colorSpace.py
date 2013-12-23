@@ -90,7 +90,7 @@ def plotCIE():
                         horizontalalignment='right',
                         verticalalignment='top',
                         transform=space.cs_ax.transAxes)
-        plt.tight_layout()
+        fig.set_tight_layout(True)
         plt.show()        
 
 def plotCMFs():
@@ -99,6 +99,7 @@ def plotCMFs():
     space = colorSpace()
 
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -108,7 +109,6 @@ def plotCMFs():
     ax.set_xlim([space.spectrum[0], space.spectrum[-1]])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
-    plt.tight_layout()
     plt.show()
 
 def plotcoeff():
@@ -117,6 +117,7 @@ def plotcoeff():
     space = colorSpace()
 
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -126,7 +127,6 @@ def plotcoeff():
     ax.set_xlim([space.spectrum[0], space.spectrum[-1]])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('coefficients')
-    plt.tight_layout()
     plt.show()
 
 

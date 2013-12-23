@@ -107,7 +107,6 @@ def plotKaiser(neitz=True, showBY=True, clip=True,
     space.cs_ax.set_xlabel('x', fontsize=10)
     space.cs_ax.set_ylabel('y', fontsize=10)
     
-    plt.tight_layout()
     plt.show()
 
 

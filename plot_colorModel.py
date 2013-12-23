@@ -14,6 +14,7 @@ def binomPlot():
     '''
     '''
     fig = plt.figure(figsize=(8, 6))
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)    
     pf.AxisFormat(linewidth=2, markersize=14)
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -30,7 +31,6 @@ def binomPlot():
 
     ax.set_xlabel("%L v M")
     ax.set_ylabel("probability")
-    plt.tight_layout()
     plt.show()
 
 
@@ -42,6 +42,7 @@ def eccentricityAnalysis():
                   2: {'percent': 0.80, 'lines': ':'}, }
 
     fig = plt.figure(figsize=(8, 6))
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)    
     pf.AxisFormat(linewidth=2, markersize=14)
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -70,7 +71,6 @@ def eccentricityAnalysis():
     ax.set_ylim([460, 625])
     ax.set_xlabel("number of center cones")
     ax.set_ylabel("wavelength (nm)")
-    plt.tight_layout()
     plt.show()
 
 
@@ -111,6 +111,7 @@ def HueScaling(lPeak=559):
                 maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
     
     fig = plt.figure(figsize=(8, 6))
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat(linewidth=3)
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -124,7 +125,6 @@ def HueScaling(lPeak=559):
     ax.set_ylabel('percentage')
     ax.set_xlim([390, 750])
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -158,6 +158,7 @@ def matching(lPeak=559, test=420, match1=485, match2=680):
         prop_match.append(match[0] / (match.sum()))
     
     fig = plt.figure(figsize=(8, 6))
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat(linewidth=3)
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -168,7 +169,6 @@ def matching(lPeak=559, test=420, match1=485, match2=680):
     ax.set_ylabel(('proportion (' + str(match1) + 
         ' / ' + '(' + str(match1) + '+' + str(match2) + ')'))
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -220,6 +220,7 @@ def match_v2(lPeak=559, test=420, match1=485, match2=680):
         match.append(wvlen)
     
     fig = plt.figure(figsize=(8, 6))
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat(linewidth=3)
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -229,7 +230,6 @@ def match_v2(lPeak=559, test=420, match1=485, match2=680):
     ax.set_xlabel('%L')
     ax.set_ylabel('wavelength')
 
-    plt.tight_layout()
     plt.show()
 
 
@@ -282,6 +282,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
                                         
     if plot:
         fig = plt.figure(figsize=(8.5, 11.5))
+        fig.set_tight_layout(True)
         ax1 = fig.add_subplot(311)
         ax2 = fig.add_subplot(312)
         ax3 = fig.add_subplot(313)
@@ -350,7 +351,6 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
         ax3.spines['bottom'].set_visible(False)
         #ax4.set_visible(True)
         ax3.edgecolor  = 'y'
-        plt.tight_layout()
 
         if Volbrecht1997:
             savename = 'uniqueHues_LMcomparison_Volbrecht.eps'
@@ -383,6 +383,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         SecondStage = model.returnSecondStage()
         
         fig = plt.figure(figsize=(8.5, 8))
+        fig.set_tight_layout(True)
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
         pf.AxisFormat()
@@ -439,7 +440,6 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         ax2.set_ylabel('sensitivity')
         ax2.set_xlabel('wavelength (nm)')
         
-        plt.tight_layout()
         if savefigs:
             firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/familyLMS_' + str(int(
@@ -456,6 +456,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         ThirdStage = model.returnThirdStage()  
 
         fig = plt.figure(figsize=(8.5, 11))
+        fig.set_tight_layout(True)
         ax1 = fig.add_subplot(311)
         ax2 = fig.add_subplot(312)
         ax3 = fig.add_subplot(313)
@@ -526,7 +527,6 @@ def plotModel(plotModel=True, plotCurveFamily=False,
             transform=ax3.transAxes)
         ax3.set_xlabel('wavelength (nm)')
         
-        plt.tight_layout()
         if savefigs:
             firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/PercentL.png'
@@ -538,6 +538,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         model = cm.colorModel(age=age)
 
         fig = plt.figure(figsize=(8, 6))
+        fig.set_tight_layout(True)
         ax = fig.add_subplot(111)
         pf.AxisFormat(linewidth=3)
         pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[4, 5])
@@ -565,7 +566,6 @@ def plotModel(plotModel=True, plotCurveFamily=False,
         ax.set_ylabel('wavelength (nm)')
         ax.set_xlabel('% L vs M')
 
-        plt.tight_layout()
         if savefigs:
             firsthalf = '../bps10.github.com/presentations/static/figures/'
             secondhalf = 'colorModel/uniqueHues.png'

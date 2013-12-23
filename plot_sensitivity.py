@@ -17,6 +17,7 @@ def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz']):
     '''
     '''
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -33,13 +34,13 @@ def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz']):
     ax.set_xlim([380, 781])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
-    plt.tight_layout()
     plt.show()
 
 def plotFilters():
     '''
     '''
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -48,7 +49,6 @@ def plotFilters():
     ax.set_xlabel('wavelength (nm)')
     ax.set_xlim([380, 781])
     ax.set_ylim([-10, max(filters)])
-    plt.tight_layout()
     plt.show()
 
 def plotSpecSens(plot_norm=False):
@@ -60,6 +60,7 @@ def plotSpecSens(plot_norm=False):
         fundamental='neitz', LMSpeaks=[559, 530, 419])
 
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -77,7 +78,6 @@ def plotSpecSens(plot_norm=False):
     ax.set_xlim([380, 781])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
-    plt.tight_layout()
     plt.show()
 
 

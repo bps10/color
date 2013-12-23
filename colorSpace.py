@@ -479,6 +479,7 @@ class colorSpace(object):
 
         
         fig = plt.figure()
+        fig.set_tight_layout(True)
         self.cs_ax = fig.add_subplot(111)
         pf.AxisFormat(FONTSIZE=10, TickSize=6)
         
@@ -572,9 +573,7 @@ class colorSpace(object):
         if invert:
             pf.invert(self.cs_ax, fig)
             
-        plt.tight_layout()
-        #plt.show()
-
+            
 def _boundval(v):
 
     if v > 1:

@@ -22,6 +22,7 @@ def plotStage2Stockman():
     '''
     '''
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -31,7 +32,6 @@ def plotStage2Stockman():
     ax.set_xlim([spectrum[0], spectrum[-1]])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
-    plt.tight_layout()
     plt.show()
 
 
@@ -39,6 +39,7 @@ def plotStage3Stockman():
     '''
     '''
     fig = plt.figure()
+    fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
@@ -48,7 +49,6 @@ def plotStage3Stockman():
     ax.set_xlim([spectrum[0], spectrum[-1]])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
-    plt.tight_layout()
     plt.show()
 
 def plotUniqueGreenSeries():
@@ -57,6 +57,8 @@ def plotUniqueGreenSeries():
     # Unique green series plot
     fig1 = plt.figure()
     fig2 = plt.figure()
+    fig1.set_tight_layout(True)
+    fig2.set_tight_layout(True)
     ax1 = fig1.add_subplot(111)
     ax2 = fig2.add_subplot(111)
     pf.AxisFormat()
@@ -86,8 +88,6 @@ def plotUniqueGreenSeries():
     ax2.set_xlabel('wavelength (nm)')
     ax2.set_ylabel('sensitivity')
 
-    fig1.tight_layout()
-    fig2.tight_layout()
     plt.show()
 
 
