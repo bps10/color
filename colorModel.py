@@ -10,17 +10,48 @@ from base import optics as op
 
 
 class colorModel():
-    '''
+    '''This class creates the color model described in Schmidt, Neitz, Neitz 2014 in
+    Journal of the Optical Society of America A.
+
+    :param center_cones: Change the number of cones assumed in the center \
+    of the ganglion cells. This is used during eccentricity analysis. \
+    Default = 1
+    :type center_cones: float
+    :param q: This is the constant that the S cones are multiplied by. \
+    It should not be changed as we assume it comes from the ratio of \
+    S to (M+L) peak sensitivities (thermal noise).
+    :type q: float
+    :param age: change the age of the individual. This will be incorporated \
+    by the lens filter, which is known to yellow with age. If not set \
+    the Stockman lens filter is used. Otherwise, the age parameterizable \
+    Pokorny and Smith measurements are used.
+    :type age: float
+    :param mac_const: Change the magnitude of the macula. This constant \
+    will scale the density of the macula. This is used to adjust macula \
+    based on individual measurments.
+
     '''
     def __init__(self, center_cones=1, q=1.300, age=None, mac_const=1.0):
-
+        '''
+        '''
         self.test = False
         self._q = q
         self.center_cones = center_cones
         self.lensMacula = getLensMaculaFilter(maxLambda=750, age=age, k=mac_const)
 
     def findConeRatios(self, fracLvM, fracS=None):
-        '''
+        '''Convert a fraction L / (L+M) into proper L, M, S proportions that sum to 1.
+
+        :param fracLvM: fraction of L:M cones (L / (L+M)). This value must be\
+        between 0 and 1.
+        :type fracLvM: float
+        :param fracS: specify the fraction of S cones in the retina. Default is\
+        None and 0.5 is assumed.
+        :type fracS: float
+        :returns: None. This sets the internal values for self.lRatio, self.mRatio\
+        and self.sRatio.
+
+        This method gets called by genModel()
         '''
         if fracS > 1 or fracLvM < 0:
             raise IOError('Fraction of LvM must be between 0 and 1!')
@@ -29,15 +60,22 @@ class colorModel():
             self.sRatio = fracS
         self.lRatio = (1 - self.sRatio) * (fracLvM)
         self.mRatio = (1 - self.sRatio) * (1 - fracLvM)
-        
-        if self.test:
-            if round(self.sRatio + self.mRatio + self.lRatio, 7) != 1.0:
-                print 'lms ratios: ', self.sRatio, self.mRatio, self.lRatio
-                raise IOError('cone ratios must sum to 1.0!')
 
     def genModel(self, ConeRatio={'fracLvM': 0.75, 's': 0.05, },
                  maxSens={'l': 559.0, 'm': 530.0, 's': 417.0, }, OD=None):
-        '''
+        '''This function generates the model. It can be called repeatedly\
+        to make changes to the parameters.
+
+        :param ConeRatio: Set the cone ratios with fracLvM and S. Default is\
+        {'fracLvM': 0.75, 's': 0.05, }.
+        :type ConeRatio: dict
+        :param maxSens: Set the peak sensitivity of the L, M and S cones in\
+        nm. Default is {'l': 559.0, 'm': 530.0, 's': 417.0, }.
+        :type maxSens: dict
+        :param OD: Set the optical density assumed for the L, M, and S cones.\
+        If not set default values of [0.4, 0.38, 0.33] are assumed.
+        :type OD: list
+        :returns: None. This method instantiates the model.
         '''
         self.findConeRatios(ConeRatio['fracLvM'], ConeRatio['s'])
         self.maxSens = maxSens
@@ -48,10 +86,15 @@ class colorModel():
         self.genThirdStage()
 
     def findUniqueHues(self):
-        '''
+        '''Find the unique hues for a given set of parameters. This \
+        method will iterate through every value of %L from 0 to 100.
+
+        This method does not return anything. To return the results \
+        from this analysis use returnUniqueHues().
+
         '''
         lambdas = self.FirstStage['lambdas']
-        uniqueRed, uniqueGreen, uniqueBlue, uniqueYellow = [], [], [], []
+        uniqueGreen, uniqueBlue, uniqueYellow = [], [], []
         LMratio = []
         if not self.SecondStage:
             self.genSecondStage()
@@ -67,11 +110,9 @@ class colorModel():
 
                 if self.lRatio == 0:
                     uniqueGreen.append(555)
-                    uniqueRed.append(592)
                 else:
                     zero_cross = np.where(np.diff(np.sign(BY)))[0]
                     uniqueGreen.append(lambdas[zero_cross[0]])
-                    uniqueRed.append(lambdas[np.argmin(BY)])
 
                 if self.mRatio == 0:
                     uniqueBlue.append(467)
@@ -86,7 +127,6 @@ class colorModel():
                 LMratio.append(i)
 
         self.uniqueHues = {
-            'red': uniqueRed,
             'blue': uniqueBlue,
             'green': uniqueGreen,
             'yellow': uniqueYellow,
@@ -94,7 +134,9 @@ class colorModel():
             }
 
     def get_current_uniqueHues(self):
-        '''
+        '''Find the unique hues for only the specified L:M ratio.
+
+        :returns: a dictionary of the unique hues.
         '''
         lambdas = self.FirstStage['lambdas']
         RG = self.ThirdStage['mCenter']
@@ -102,11 +144,9 @@ class colorModel():
 
         if self.lRatio == 0:
             uniqueGreen = 553
-            uniqueRed = 592
         else:
             zero_cross = np.where(np.diff(np.sign(BY)))[0]
             uniqueGreen = lambdas[zero_cross[0]]
-            uniqueRed = lambdas[np.argmin(BY)]
 
         if self.mRatio == 0:
             uniqueBlue = 474
@@ -120,7 +160,6 @@ class colorModel():
                 uniqueYellow = np.nan 
 
         hues = {
-            'red': uniqueRed,
             'blue': uniqueBlue,
             'green': uniqueGreen,
             'yellow': uniqueYellow,
@@ -130,8 +169,9 @@ class colorModel():
 
     def genFirstStage(self, startLambda=390, endLambda=750, step=1,
                         Out='anti-log', OD=None):
-        """Compute the first stage in the model
-        """
+        '''Compute the first stage in the model.
+
+        '''
         if OD is None:
             OD = [0.4, 0.38, 0.33]
 
@@ -168,8 +208,8 @@ class colorModel():
             }
 
     def genSecondStage(self):
-        """Compute the second stage in the model
-        """
+        '''Compute the second stage in the model
+        '''
         # get cones into dict for optimization below
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
@@ -251,28 +291,42 @@ class colorModel():
                 self.ThirdStage['mCenter'] += (mCenter * centerProb * probSur) 
 
     def returnFirstStage(self):
-        '''
+        '''Return the data generated by the first stage of the model.
+
+        :returns: Dictionary that contains L, M, S spectral sensitivities,\
+        the spectrum and the sampling parameters.
         '''
         return self.FirstStage
 
     def returnSecondStage(self):
-        '''
+        '''Return the data generated by the second stage of the model.
+
+        :returns: Dictionary that contains lmvV_M and lmsV_L data.
         '''
         return self.SecondStage
 
     def returnThirdStage(self):
-        '''
+        '''Return the data generated by the third stage of the model.
+
+        :returns: Dictionary that contains the predicted sensitivities of\
+        the mCenter and lCenter midget ganglion cells.
         '''
         return self.ThirdStage
 
     def returnUniqueHues(self):
-        '''
+        '''Return the predicted location of unique hues as a function of\
+        L:M cone ratio. The OD, and peak L sensitivies set during genModel()\
+        are used, but L:M cone ratio is changed iteratively from 0 to 100.
+
+        :returns: Dictionary containing predicted values for blue, yellow \
+        and green.
         '''
         return self.uniqueHues
 
 
 def getLensMaculaFilter(maxLambda=750, age=None, k=1.0):
-    '''
+    '''Get the lens and macula filters. This function is called\
+    during the creation of the class.
     '''
     if age is not None:
         macula = op.filters.stockman(minLambda=390, 
@@ -294,7 +348,11 @@ def getLensMaculaFilter(maxLambda=750, age=None, k=1.0):
 
 
 def getCarroll_LMratios():
-    '''
+    '''This function loads and returns the L:M cone rations measured \
+    by Joe Carroll in 2002.
+
+    :returns: array with data.
+    :rtype: numpy.array
     '''
     temp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
         'data/Carroll2002_lmRatios.txt')
@@ -303,7 +361,7 @@ def getCarroll_LMratios():
                 names=True)
 
 def getHueScalingData(ConeRatio, maxSens, scale=False, norm=False):
-    '''
+    '''Return half wave rectified color channels.
     '''
     model = colorModel()
     model.genModel(ConeRatio=ConeRatio, maxSens=maxSens)
@@ -336,7 +394,9 @@ def getHueScalingData(ConeRatio, maxSens, scale=False, norm=False):
 
 
 def optimizeChannel(q, cones, percent, Center):
-    '''
+    '''An internal function that solves for the constant that makes the \
+    center and surround of each ganglion cell balanced (i.e. integrate to 0).
+
     '''
     m_ = percent['m'] / (percent['m'] + percent['l'])
     l_ = percent['l'] / (percent['m'] + percent['l'])
@@ -354,7 +414,7 @@ def optimizeChannel(q, cones, percent, Center):
 
 
 def binom(k, n, p):
-    '''
+    '''A binomial function.
     '''
     return (factorial(n) / (factorial(k) * factorial(n - k))
                         * (p ** k) * (1 - p) ** (n - k))
