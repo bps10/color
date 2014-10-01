@@ -31,7 +31,7 @@ class colorModel():
     based on individual measurments.
 
     '''
-    def __init__(self, center_cones=1, q=1.300, age=None, mac_const=1.0):
+    def __init__(self, center_cones=1, q=1.00, age=None, mac_const=1.0):
         '''
         '''
         self.test = False
@@ -182,21 +182,21 @@ class colorModel():
                             OpticalDensity=OD[0],
                             EndWavelength=endLambda, 
                             resolution=step)
-        L_cones /= self.lensMacula
+        L_cones /= self.lensMacula * lambdas
         
         M_cones = ss.neitz(LambdaMax=self.maxSens['m'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=OD[1],
                             EndWavelength=endLambda, 
                             resolution=step)
-        M_cones /= self.lensMacula
+        M_cones /= self.lensMacula * lambdas
         
         S_cones = ss.neitz(LambdaMax=self.maxSens['s'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=OD[2],
                             EndWavelength=endLambda, 
                             resolution=step)
-        S_cones /= self.lensMacula
+        S_cones /= self.lensMacula * lambdas
 
         self.FirstStage = {
             'lambdas': lambdas,
