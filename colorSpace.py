@@ -14,7 +14,7 @@ class colorSpace(object):
     '''
     '''
     def __init__(self, stim='wright', fundamental='neitz', 
-                 LMSpeaks=[559.0, 530.0, 421.0]):
+                 LMSpeaks=[559.0, 530.0, 417.0]):
         
         self.params = {'lights': stim.lower, }
         self.setLights(stim)
@@ -26,7 +26,7 @@ class colorSpace(object):
         self.CMFtoEE_CMF()
         self.EE_CMFtoRGB()
         
-    def genLMS(self, fundamental, LMSpeaks=[559.0, 530.0, 421.0]):
+    def genLMS(self, fundamental, LMSpeaks=[559.0, 530.0, 417.0]):
         '''
         ''' 
         fund = fundamental.lower()
@@ -220,13 +220,42 @@ class colorSpace(object):
         '''
         '''
         l = propL
-        m = -propM
+        m = propM
         s = propS
         
         r, g, b = self.find_rgb(np.array([l, m, s]))
-        line = self._lineEq(r, g)
-        neutPoint = self._findDataIntercept(self.rVal, self.gVal, line)
+        line, slope, b = self._lineEq(r, g, verbose=True)
         
+        rval = self.rVal
+        gval = self.gVal
+        # create a rotation matrix
+        angle = np.arctan(-slope)
+        cost = np.cos(angle)
+        sint = np.sin(angle)
+        R = np.array([[cost, -sint],
+                      [sint, cost]])
+        # rotate the spectrum locus according to confusion line
+        [xval, yval] = np.dot(R, [rval, gval])
+        [foo, y_offset] = np.dot(R, [rval, line(rval)])
+        # remove DC offset of rotated confusion line
+        a = yval - y_offset
+        # find zero crossings
+        zero_crossings = np.where(np.diff(np.sign(a)))[0]
+        # find r and g val of intersection
+        R = np.array([[cost, sint], [-sint, cost]])
+        neutPoint = []
+        for cross in zero_crossings:
+            xs = xval[cross - 2:cross + 2]
+            ys = a[cross - 2:cross + 2]
+            # x values (ys) must be increasing for lin interp
+            if not np.all(np.diff(ys) > 0):
+                ys = ys[::-1]
+                xs = xs[::-1]
+            # interpolate
+            x = np.interp(0, ys, xs)
+            [rv, gv] = np.dot(R, [x, y_offset[cross]])
+            neutPoint.append([rv, gv])
+
         if verbose is True:
             return neutPoint, [r, g]
         else:
@@ -343,7 +372,7 @@ class colorSpace(object):
         
         return [r_, g_, b_]
         
-    def _lineEq(self, x1, y1, x2=None, y2=None):
+    def _lineEq(self, x1, y1, x2=None, y2=None, verbose=False):
         '''Return the equation of a line from a given point that will pass
         through equal energy. Returns a function that takes one variable, x, 
         and returns y.
@@ -355,7 +384,11 @@ class colorSpace(object):
             
         m_ = (y2 - y1) / (x2 - x1)
         b_ = (y1) - (m_ * (x1))
-        return lambda x: (m_ * x) + b_
+        line = lambda x: (m_ * x) + b_
+        if verbose:
+            return line, m_, b_
+        else:
+            return line
 
     def _findDataIntercept(self, x, y, func):
         '''
@@ -481,13 +514,13 @@ class colorSpace(object):
         fig = plt.figure()
         fig.set_tight_layout(True)
         self.cs_ax = fig.add_subplot(111)
-        pf.AxisFormat(FONTSIZE=10, TickSize=6)
+        pf.AxisFormat(fontsize=10, ticksize=6)
         
         if not JuddV:
-            pf.AxisFormat(FONTSIZE=10, TickSize=6)
+            pf.AxisFormat(fontsize=10, ticksize=6)
             pf.centerAxes(self.cs_ax)
         if JuddV:
-            pf.AxisFormat(FONTSIZE=10, TickSize=8)
+            pf.AxisFormat(fontsize=10, ticksize=8)
             pf.centerAxes(self.cs_ax)
 
         if color:

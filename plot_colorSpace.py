@@ -45,7 +45,7 @@ def plotCIE():
     '''
     '''        
     space = colorSpace(fundamental='neitz',
-                             LMSpeaks=[559.0, 530.0, 421.0])          
+                             LMSpeaks=[559.0, 530.0, 417.0])          
     sub1_Neitz, sub2_Neitz, jv = space.genKaiser()
     ## plot confusion lines
     clip_area = Wedge((jv[0, 0], jv[0, 1]), r=10, theta1=0, theta2=360)
@@ -133,7 +133,7 @@ def plotcoeff():
 def plotColorSpace(color):
     '''
     '''
-    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
+    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 421])
     space._plotColorSpace(color=color)
     plt.show()
 
@@ -141,7 +141,7 @@ def plotColorSpace(color):
 def plotBYsystem(space, PRINT=False, clip=True):
     '''
     '''
-    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
+    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 421])
 
     space._plotColorSpace()
     
@@ -149,14 +149,12 @@ def plotBYsystem(space, PRINT=False, clip=True):
         m = (10.0 - s) / 10.0
         s = s / 10.0
 
-        neut, RG = space.BY2lambda(s, m, 0, True)
-        if PRINT is True:
-            #print RG
-            #print neut
-            print space.find_testlightFromRG(neut[0], neut[1])
-        space.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
+        neutral_points, RG = space.BY2lambda(s, 0, -m, True)
+        for neut in neutral_points:
+            space.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
                         '-o', c=(0, m, s), markersize=8, linewidth=2)
-    
+    #space.cs_ax.plot(1. / 3., 1. / 3., 'o')
+
     if clip is True:                
         space.cs_ax.set_xlim([-0.4, 1.2])
         space.cs_ax.set_ylim([-0.2, 1.2])
@@ -166,7 +164,7 @@ def plotBYsystem(space, PRINT=False, clip=True):
 def plotRGsystem(PRINT=False, clip=True):
     '''
     '''
-    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
+    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 417])
     space._plotColorSpace()
     
     for l in range(0, 11):
@@ -191,7 +189,7 @@ def plotRGsystem(PRINT=False, clip=True):
 def plotConfusionLines(deficit='tritan', clip=True):
     '''add confusion lines
         '''
-    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 419])
+    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 417])
     space._plotColorSpace()
     space.find_copunctuals()
     print deficit, ': ', space.copunctuals[deficit]
