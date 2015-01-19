@@ -138,22 +138,33 @@ def plotColorSpace(color):
     plt.show()
 
 
-def plotBYsystem(space, PRINT=False, clip=True):
+def plot_dichromatic_system(space, hybrid='ls', clip=True):
     '''
     '''
     space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 421])
-
     space._plotColorSpace()
     
-    for s in range(0, 11):
-        m = (10.0 - s) / 10.0
-        s = s / 10.0
+    for x in np.arange(0, 1.1, 0.1):
+        if hybrid.lower() == 'ls' or hybrid.lower() == 'sl':
+            s = x
+            m = 0
+            l = -(1.0 - x)
+        elif hybrid.lower() == 'lm' or hybrid.lower() == 'ml':
+            s = 0
+            m = x
+            l = -(1.0 - x)
+        elif hybrid.lower() == 'ms' or hybrid.lower() == 'sm':
+            s = x
+            m = -(1.0 - x)
+            l = 0
+        else:
+            raise InputError('hybrid must be ls, lm or ms')
 
-        neutral_points, RG = space.BY2lambda(s, 0, -m, True)
+        neutral_points, RG = space.find_spect_neutral([l, m, s], True)
         for neut in neutral_points:
             space.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
-                        '-o', c=(0, m, s), markersize=8, linewidth=2)
-    #space.cs_ax.plot(1. / 3., 1. / 3., 'o')
+                             '-o', c=(np.abs(l), np.abs(m), np.abs(s)), 
+                             markersize=8, linewidth=2)
 
     if clip is True:                
         space.cs_ax.set_xlim([-0.4, 1.2])
@@ -161,30 +172,6 @@ def plotBYsystem(space, PRINT=False, clip=True):
     
     plt.show()
         
-def plotRGsystem(PRINT=False, clip=True):
-    '''
-    '''
-    space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 417])
-    space._plotColorSpace()
-    
-    for l in range(0, 11):
-        m = (10.0 - l) / 10.0
-        l = l / 10.0
-        
-        neut, RG = space.RG2lambda(0, m, l, True)
-        
-        if PRINT is True:
-            #print RG
-            #print neut
-            print space.find_testlightFromRG(neut[0], neut[1])
-        space.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
-                        '-o', c=(l, m, 0), markersize=8, linewidth=2)
-    
-    if clip is True:                
-        space.cs_ax.set_xlim([-0.4, 1.2])
-        space.cs_ax.set_ylim([-0.2, 1.2])
-    
-    plt.show()
 
 def plotConfusionLines(deficit='tritan', clip=True):
     '''add confusion lines
@@ -231,11 +218,8 @@ def main(args):
     if args.ConfusionLines:
         plotConfusionLines()
 
-    if args.BYsystem:
-        plotBYsystem(False)
-
-    if args.RGsystem:
-        plotRGsystem(False)
+    if args.dichromat:
+        plot_dichromatic_system(False, hybrid=args.hybrid)
     
     if args.ConeSpace:
         plotConeSpace()
@@ -260,10 +244,10 @@ if __name__ == '__main__':
                         help="plot color space")
     parser.add_argument("-c", "--ConfusionLines", action="store_true",
                         help="plot color space with confusion lines")
-    parser.add_argument("-q", "--BYsystem", action="store_true",
+    parser.add_argument("-q", "--dichromat", action="store_true",
                         help="plot blue-yellow system on color space")   
-    parser.add_argument("-p", "--RGsystem", action="store_true",
-                        help="plot red-green system on color space") 
+    parser.add_argument("--hybrid", type=str, default='ls',
+                        help="set hybrid pigment for dichromatic system")
     parser.add_argument("-o", "--ConeSpace", action="store_true",
                         help="displace cone space plot")
     parser.add_argument("-l", "--LUV", action="store_true",

@@ -216,14 +216,10 @@ class colorSpace(object):
         else:
             return neutPoint
 
-    def BY2lambda(self, propS, propM, propL=0, verbose=False):
+    def find_spect_neutral(self, lms, verbose=False):
         '''
-        '''
-        l = propL
-        m = propM
-        s = propS
-        
-        r, g, b = self.find_rgb(np.array([l, m, s]))
+        '''        
+        r, g, b = self.find_rgb(np.asarray(lms))
         line, slope, b = self._lineEq(r, g, verbose=True)
         
         rval = self.rVal
