@@ -13,7 +13,8 @@ filters, spectrum = filters.stockman(minLambda=390,
             maxLambda=maxLambda, RETURN_SPECTRUM=True, 
             resolution=1)
 
-def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz']):
+def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz'],
+    invert=False):
     '''
     '''
     fig = plt.figure()
@@ -34,9 +35,13 @@ def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz']):
     ax.set_xlim([380, 781])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
+
+    if invert:
+        pf.invert(ax, fig, bk_color='k')
+
     plt.show()
 
-def plotFilters():
+def plotFilters(invert=False, log=True):
     '''
     '''
     fig = plt.figure()
@@ -44,14 +49,21 @@ def plotFilters():
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-    ax.semilogy(spectrum, filters, 'k', linewidth=2)
+    if log:
+        ax.semilogy(spectrum, filters, 'k', linewidth=2)
+    else:
+        ax.plot(spectrum, filters, 'k', linewidth=2)
+
     ax.set_ylabel('log density')
     ax.set_xlabel('wavelength (nm)')
     ax.set_xlim([380, 781])
     ax.set_ylim([-10, max(filters)])
+
+    if invert:
+        pf.invert(ax, fig, bk_color='k')
     plt.show()
 
-def plotSpecSens(plot_norm=False, log=True):
+def plotSpecSens(plot_norm=True, log=False, invert=False):
     '''
     '''
     Lnorm, Mnorm, Snorm = genLMS(spectrum, filters, 
@@ -64,30 +76,39 @@ def plotSpecSens(plot_norm=False, log=True):
     ax = fig.add_subplot(111)
     pf.AxisFormat()
     pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-
-    if not log:
-        ax.plot(spectrum, L, 'r-')
-        ax.plot(spectrum, M, 'g-')
-        ax.plot(spectrum, S, 'b-')
-        ax.set_ylim([-0.01, 1.01])
-    else:
-        ax.semilogy(spectrum, L, 'r-')
-        ax.semilogy(spectrum, M, 'g-')
-        ax.semilogy(spectrum, S, 'b-')
-        ax.set_ylim([10 ** -4, 10 ** -0])
     
     if plot_norm:
-        ax.plot(spectrum, Snorm, 'b', linewidth=2)
-        ax.plot(spectrum, Mnorm, 'g', linewidth=2)
-        ax.plot(spectrum, Lnorm, 'r', linewidth=2)
+        if log:
+            ax.semilogy(spectrum, Snorm, 'b', linewidth=2)
+            ax.semilogy(spectrum, Mnorm, 'g', linewidth=2)
+            ax.semilogy(spectrum, Lnorm, 'r', linewidth=2)
+        else:
+            ax.plot(spectrum, Snorm, 'b', linewidth=2)
+            ax.plot(spectrum, Mnorm, 'g', linewidth=2)
+            ax.plot(spectrum, Lnorm, 'r', linewidth=2)
+    else:
+        if log:
+            ax.semilogy(spectrum, S, 'b', linewidth=2)
+            ax.semilogy(spectrum, M, 'g', linewidth=2)
+            ax.semilogy(spectrum, L, 'r', linewidth=2)
+        else:
+            ax.plot(spectrum, S, 'b', linewidth=2)
+            ax.plot(spectrum, M, 'g', linewidth=2)
+            ax.plot(spectrum, L, 'r', linewidth=2)
 
+    if log:
+        ax.set_ylim([10 ** -5, 1])
     ax.set_xlim([380, 781])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('sensitivity')
+
+    if invert:
+        pf.invert(ax, fig, bk_color='k')
+
     plt.show()
 
 
-def plotRelativeSens():
+def plotRelativeSens(invert=False):
     '''
     '''
     Lnorm, Mnorm, Snorm = genLMS(spectrum, filters, 
@@ -107,22 +128,25 @@ def plotRelativeSens():
     ax.set_xlim([380, 781])
     ax.set_xlabel('wavelength (nm)')
     ax.set_ylabel('L/M sensitivity ratio')
+    if invert:
+        pf.invert(ax, fig, bk_color='k')
     plt.show()
 
 def main(args):
     '''
     '''
     if args.Compare:
-        plotCompare()
+        plotCompare(invert=args.invert)
 
     if args.Filters:
-        plotFilters()
+        plotFilters(invert=args.invert)
 
     if args.SpecSens:
-        plotSpecSens()
+        plotSpecSens(invert=args.invert, log=args.log, 
+                     plot_norm=args.norm)
 
     if args.Relative:
-        plotRelativeSens()
+        plotRelativeSens(invert=args.invert)
 
 if __name__ == '__main__':
 
@@ -135,8 +159,16 @@ if __name__ == '__main__':
     parser.add_argument("-f", "--Filters", action="store_true",
                         help="plot lens and macula filters")
     parser.add_argument("-s", "--SpecSens", action="store_true", 
-                         help="display spectral sensitivities")
+                        help="display spectral sensitivities")
     parser.add_argument("-r", "--Relative", action="store_true", 
-                         help="display relative LM spectral sensitivities")
+                        help="display relative LM spectral sensitivities")
+    parser.add_argument("-i", "--invert", action='store_true',
+                        help="invert background (black)")
+    parser.add_argument("-l", "--log", action='store_true',
+                        help="make y axis a log plot")
+    parser.add_argument("-n", "--norm", action='store_true',
+                        help="plot normed fundamentals")
+
     args = parser.parse_args()
+
     main(args)
