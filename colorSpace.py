@@ -16,22 +16,49 @@ class colorSpace(object):
     def __init__(self, stim='wright', fundamental='neitz', 
                  LMSpeaks=[559.0, 530.0, 421.0]):
         
-        self.params = {'lights': stim.lower, }
-        self.setLights(stim)
-        self.genStockmanFilter()
-        self.genLMS(fundamental, LMSpeaks)
+        self.param = {'lights': stim.lower, 'stim': stim, 
+                       'fund': fundamental, 'LMSpeaks': LMSpeaks}
+        self.gen_space()
+
+    def gen_space(self):
+        '''
+        '''
+        # get fundamentals
+        self.genfund(self.param['fund'])
+        # gen fund to CMF matrix
         self.genConvMatrix()
-        
+        # convert fund to CMF
         self.LMStoCMFs()
+        # convert CMF to Equal Energy
         self.CMFtoEE_CMF()
+        # convert EE CMF to chromaticity coords (i.e. x + y + z = 1)
         self.EE_CMFtoRGB()
-        
-    def genLMS(self, fundamental, LMSpeaks=[559.0, 530.0, 421.0]):
+
+    
+    def genfund(self, fundamental):
         '''
         ''' 
-        fund = fundamental.lower()
-        self.Lnorm, self.Mnorm, self.Snorm = genLMS(self.spectrum, 
-            self.filters, fundamental=fund, LMSpeaks=LMSpeaks)
+        self.fund = fundamental.lower()
+        if self.fund in ['neitz', 'stockman']:
+            self.genStockmanFilter()
+            self.Lnorm, self.Mnorm, self.Snorm = genLMS(self.spectrum, 
+                                            self.filters, 
+                                            fundamental=self.fund, 
+                                            LMSpeaks=self.param['LMSpeaks'])
+
+        elif self.fund == 'smithpokorny' or self.fund == 'sp':
+            sens, spectrum = ss.smithpokorny(minLambda=390, 
+                                             maxLambda=720, 
+                                             return_spect=True, 
+                                             quanta=False)
+            self.spectrum = spectrum
+            self.Lnorm = sens[:, 0]
+            self.Mnorm = sens[:, 1]
+            self.Snorm = sens[:, 2]
+
+        else:
+            raise InputError('fundamentals not supported: must be neitz, \
+            stockman or smithpokorny')
 
     def genStockmanFilter(self, maxLambda=770):
         '''
@@ -43,18 +70,22 @@ class colorSpace(object):
     def genConvMatrix(self, PRINT=False):
         '''
         '''
-        self.convMatrix = np.array([
-            [np.interp(self.lights['l'], self.spectrum, self.Lnorm),
-            np.interp(self.lights['m'], self.spectrum, self.Lnorm),
-            np.interp(self.lights['s'], self.spectrum, self.Lnorm)],
+        if self.fund in ['neitz', 'stockman']:
+            self.setLights(stim)        
+            self.convMatrix = np.array([
+                [np.interp(self.lights['l'], self.spectrum, self.Lnorm),
+                 np.interp(self.lights['m'], self.spectrum, self.Lnorm),
+                 np.interp(self.lights['s'], self.spectrum, self.Lnorm)],
 
-            [np.interp(self.lights['l'], self.spectrum, self.Mnorm),
-            np.interp(self.lights['m'], self.spectrum, self.Mnorm),
-            np.interp(self.lights['s'], self.spectrum, self.Mnorm)],
+                [np.interp(self.lights['l'], self.spectrum, self.Mnorm),
+                 np.interp(self.lights['m'], self.spectrum, self.Mnorm),
+                 np.interp(self.lights['s'], self.spectrum, self.Mnorm)],
 
-            [np.interp(self.lights['l'], self.spectrum, self.Snorm),
-            np.interp(self.lights['m'], self.spectrum, self.Snorm),
-            np.interp(self.lights['s'], self.spectrum, self.Snorm)]])
+                [np.interp(self.lights['l'], self.spectrum, self.Snorm),
+                 np.interp(self.lights['m'], self.spectrum, self.Snorm),
+                 np.interp(self.lights['s'], self.spectrum, self.Snorm)]])
+        else:
+            self.convMatrix = ss.JuddVosCIE_to_sp()
 
         if PRINT == True:
             print self.convMatrix
@@ -62,6 +93,7 @@ class colorSpace(object):
     def genTetraConvMatrix(self, Xpeak):
         '''
         '''
+        self.setLights(stim)        
         minspec = min(self.spectrum)
         maxspec = max(self.spectrum)
         Xsens = ss.neitz(Xpeak, 0.5, False, minspec, 
@@ -111,7 +143,7 @@ class colorSpace(object):
         self.Z = xyz[2, :]
         
         if plot:
-            self._plotColorSpace(self.X, self.Y, self.spectrum)
+            self.plotColorSpace(self.X, self.Y, self.spectrum)
             plt.show()           
 
     def setLights(self, stim):
@@ -449,7 +481,7 @@ class colorSpace(object):
         '''
         return {'r': self.rVal, 'g': self.gVal, 'b': self.bVal, }
 
-    def _plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
+    def plotColorSpace(self, rVal=None, gVal=None, spec=None, ee=True,
                         invert=False, Luv=False, skipLam=None, color=False):
         '''
         '''           
@@ -461,10 +493,14 @@ class colorSpace(object):
             rVal = self.rVal
             gVal = self.gVal
             spec = self.spectrum
-            
-            JuddV = False
-            offset = 0.02
-            turn = [500, 510]
+            if self.fund in ['neitz', 'stockman']:
+                JuddV = False
+                offset = 0.02
+                turn = [500, 510]
+            else:
+                JuddV = True
+                offset = 0.01
+                turn = [510, 520]
         
         elif Luv:
             JuddV = False
@@ -481,13 +517,13 @@ class colorSpace(object):
         fig = plt.figure()
         fig.set_tight_layout(True)
         self.cs_ax = fig.add_subplot(111)
-        pf.AxisFormat(FONTSIZE=10, TickSize=6)
+        pf.AxisFormat(fontsize=10, ticksize=6)
         
-        if not JuddV:
-            pf.AxisFormat(FONTSIZE=10, TickSize=6)
-            pf.centerAxes(self.cs_ax)
         if JuddV:
-            pf.AxisFormat(FONTSIZE=10, TickSize=8)
+            pf.AxisFormat(fontsize=10, ticksize=8)
+            pf.TufteAxis(self.cs_ax, ['left', 'bottom'], [4, 4])
+        else:
+            pf.AxisFormat(fontsize=10, ticksize=6)
             pf.centerAxes(self.cs_ax)
 
         if color:
