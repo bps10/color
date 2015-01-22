@@ -14,7 +14,7 @@ class colorSpace(object):
     '''
     '''
     def __init__(self, stim='wright', fundamental='neitz', 
-                 LMSpeaks=[559.0, 530.0, 421.0]):
+                 LMSpeaks=[559.0, 530.0, 417.0]):
         
         self.param = {'lights': stim.lower, 'stim': stim, 
                        'fund': fundamental, 'LMSpeaks': LMSpeaks}
@@ -71,7 +71,7 @@ class colorSpace(object):
         '''
         '''
         if self.fund in ['neitz', 'stockman']:
-            self.setLights(stim)        
+            self.setLights(self.param['stim'])        
             self.convMatrix = np.array([
                 [np.interp(self.lights['l'], self.spectrum, self.Lnorm),
                  np.interp(self.lights['m'], self.spectrum, self.Lnorm),
@@ -93,7 +93,7 @@ class colorSpace(object):
     def genTetraConvMatrix(self, Xpeak):
         '''
         '''
-        self.setLights(stim)        
+        self.setLights(self.param['stim'])        
         minspec = min(self.spectrum)
         maxspec = max(self.spectrum)
         Xsens = ss.neitz(Xpeak, 0.5, False, minspec, 
@@ -248,38 +248,6 @@ class colorSpace(object):
         else:
             return neutPoint
 
-    def BY2lambda(self, propS, propM, propL=0, verbose=False):
-        '''
-        '''
-        l = propL
-        m = -propM
-        s = propS
-        
-        r, g, b = self.find_rgb(np.array([l, m, s]))
-        line = self._lineEq(r, g)
-        neutPoint = self._findDataIntercept(self.rVal, self.gVal, line)
-        
-        if verbose is True:
-            return neutPoint, [r, g]
-        else:
-            return neutPoint
-
-    def RG2lambda(self, propS, propM, propL=0, verbose=False):
-        '''
-        '''
-        l = propL
-        m = -propM
-        s = propS
-        
-        r, g, b = self.find_rgb(np.array([l, m, s]))
-        line = self._lineEq(r, g)
-        neutPoint = self._findDataIntercept(self.rVal, self.gVal, line)
-        
-        if verbose is True:
-            return neutPoint, [r, g]
-        else:
-            return neutPoint
-
     def EE_CMFtoRGB(self, rgb=None):
         '''
         '''
@@ -289,12 +257,56 @@ class colorSpace(object):
         else:
             return self.TrichromaticEquation(rgb[0], rgb[1], rgb[2])
 
+
+    def find_spect_neutral(self, lms, verbose=False):
+        '''
+        '''        
+        r, g, b = self.lms_to_rgb(np.asarray(lms))
+        line, slope, b = self._lineEq(r, g, verbose=True)
+        
+        rval = self.rVal
+        gval = self.gVal
+        rval = np.concatenate((rval, [rval[0]]))
+        gval = np.concatenate((gval, [gval[0]]))
+        # create a rotation matrix
+        angle = np.arctan(-slope)
+        cost = np.cos(angle)
+        sint = np.sin(angle)
+        R = np.array([[cost, -sint],
+                      [sint, cost]])
+        # rotate the spectrum locus according to confusion line
+        [xval, yval] = np.dot(R, [rval, gval])
+        [foo, y_offset] = np.dot(R, [rval, line(rval)])
+        # remove DC offset of rotated confusion line
+        a = yval - y_offset
+        # find zero crossings
+        zero_crossings = np.where(np.diff(np.sign(a)))[0]
+        # find r and g val of intersection
+        R = np.array([[cost, sint], [-sint, cost]])
+        neutPoint = []
+        for cross in zero_crossings:
+            xs = xval[cross - 2:cross + 2]
+            ys = a[cross - 2:cross + 2]
+            # x values (ys) must be increasing for lin interp
+            if not np.all(np.diff(ys) > 0):
+                ys = ys[::-1]
+                xs = xs[::-1]
+            # interpolate
+            x = np.interp(0, ys, xs)
+            [rv, gv] = np.dot(R, [x, y_offset[cross]])
+            neutPoint.append([rv, gv])
+
+        if verbose is True:
+            return neutPoint, [r, g]
+        else:
+            return neutPoint
+
     def find_copunctuals(self):
         '''
         '''
-        protan = self.find_rgb(np.array([1, 0, 0]))
-        deutan = self.find_rgb(np.array([0, 1, 0]))
-        tritan = self.find_rgb(np.array([0, 0, 1]))
+        protan = self.lms_to_rgb(np.array([1, 0, 0]))
+        deutan = self.lms_to_rgb(np.array([0, 1, 0]))
+        tritan = self.lms_to_rgb(np.array([0, 0, 1]))
         
         self.copunctuals = {'protan': protan, 
                             'deutan': deutan, 
@@ -317,7 +329,7 @@ class colorSpace(object):
         s_ = np.interp(testLight, self.spectrum, Snorm)
 
         if R == None or G == None or B == None:
-            rOut, gOut, bOut = self.find_rgb(LMS=np.array([l_, m_, s_]))
+            rOut, gOut, bOut = self.lms_to_rgb(LMS=np.array([l_, m_, s_]))
         else:
             rOut, gOut, bOut = l_, m_, s_
             
@@ -350,20 +362,13 @@ class colorSpace(object):
             raise IndexError('Pure light not found. Are you sure the [r, g] \
                             coords lie on the spectral line?')
         
-    def find_rgb(self, LMS):
+    def lms_to_rgb(self, LMS):
         '''
         '''
         cmf = np.dot(np.linalg.inv(self.convMatrix), LMS)
         cmf[0], cmf[1], cmf[2] = self._EEcmf(cmf[0], cmf[1], cmf[2])
         out = self.TrichromaticEquation(cmf[0], cmf[1], cmf[2])
         return out
-
-    def find_BYweights(self):
-        '''Function not finished
-        '''
-        neut, RG = self.BY2lambda(s, m, 0, True)
-        n, rg  = self.BY2lambda(0.48, 0.52, 0, True)
-        print self.find_testlightFromRG(n[0], n[1])
 
     def _EEcmf(self, r_, g_, b_):   
         '''
@@ -375,7 +380,7 @@ class colorSpace(object):
         
         return [r_, g_, b_]
         
-    def _lineEq(self, x1, y1, x2=None, y2=None):
+    def _lineEq(self, x1, y1, x2=None, y2=None, verbose=False):
         '''Return the equation of a line from a given point that will pass
         through equal energy. Returns a function that takes one variable, x, 
         and returns y.
@@ -387,7 +392,11 @@ class colorSpace(object):
             
         m_ = (y2 - y1) / (x2 - x1)
         b_ = (y1) - (m_ * (x1))
-        return lambda x: (m_ * x) + b_
+        line = lambda x: (m_ * x) + b_
+        if verbose:
+            return line, m_, b_
+        else:
+            return line
 
     def _findDataIntercept(self, x, y, func):
         '''
