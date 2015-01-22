@@ -46,15 +46,28 @@ class colorSpace(object):
                                             fundamental=self.fund, 
                                             LMSpeaks=self.param['LMSpeaks'])
 
-        elif self.fund == 'smithpokorny' or self.fund == 'sp':
+        elif self.fund[:12] == 'smithpokorny' or self.fund == 'sp':
             sens, spectrum = ss.smithpokorny(minLambda=390, 
                                              maxLambda=720, 
                                              return_spect=True, 
                                              quanta=False)
+            # create Judd-Vos CMFs
+            JVm = ss.sp_to_JuddVosCIE()
+            cmf = np.dot(JVm, sens.T)
+
             self.spectrum = spectrum
             self.Lnorm = sens[:, 0]
             self.Mnorm = sens[:, 1]
             self.Snorm = sens[:, 2]
+
+            # normalize to peak at unity
+            self.Lnorm /= np.max(self.Lnorm)
+            self.Mnorm /= np.max(self.Mnorm)
+            self.Snorm /= np.max(self.Snorm)
+
+            # need to generate conversion matrix here
+            M = np.linalg.lstsq(cmf.T, sens)[0].T
+            self.convMatrix = M
 
         else:
             raise InputError('fundamentals not supported: must be neitz, \
@@ -70,7 +83,7 @@ class colorSpace(object):
     def genConvMatrix(self, PRINT=False):
         '''
         '''
-        if self.fund in ['neitz', 'stockman']:
+        if self.fund in ['neitz', 'stockman', 'smithpokorny_rgb']:
             self.setLights(self.param['stim'])        
             self.convMatrix = np.array([
                 [np.interp(self.lights['l'], self.spectrum, self.Lnorm),
@@ -84,8 +97,7 @@ class colorSpace(object):
                 [np.interp(self.lights['l'], self.spectrum, self.Snorm),
                  np.interp(self.lights['m'], self.spectrum, self.Snorm),
                  np.interp(self.lights['s'], self.spectrum, self.Snorm)]])
-        else:
-            self.convMatrix = ss.JuddVosCIE_to_sp()
+        # Already created for smith-pokorny case
 
         if PRINT == True:
             print self.convMatrix
@@ -509,7 +521,7 @@ class colorSpace(object):
             else:
                 JuddV = True
                 offset = 0.01
-                turn = [510, 520]
+                turn = [520, 530]
         
         elif Luv:
             JuddV = False
