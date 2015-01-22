@@ -216,14 +216,26 @@ class colorSpace(object):
         else:
             return neutPoint
 
+    def EE_CMFtoRGB(self, rgb=None):
+        '''
+        '''
+        if rgb is None:
+            self.rVal, self.gVal, self.bVal = self.TrichromaticEquation(
+                            self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
+        else:
+            return self.TrichromaticEquation(rgb[0], rgb[1], rgb[2])
+
+
     def find_spect_neutral(self, lms, verbose=False):
         '''
         '''        
-        r, g, b = self.find_rgb(np.asarray(lms))
+        r, g, b = self.lms_to_rgb(np.asarray(lms))
         line, slope, b = self._lineEq(r, g, verbose=True)
         
         rval = self.rVal
         gval = self.gVal
+        rval = np.concatenate((rval, [rval[0]]))
+        gval = np.concatenate((gval, [gval[0]]))
         # create a rotation matrix
         angle = np.arctan(-slope)
         cost = np.cos(angle)
@@ -257,37 +269,12 @@ class colorSpace(object):
         else:
             return neutPoint
 
-    def RG2lambda(self, propS, propM, propL=0, verbose=False):
-        '''
-        '''
-        l = propL
-        m = -propM
-        s = propS
-        
-        r, g, b = self.find_rgb(np.array([l, m, s]))
-        line = self._lineEq(r, g)
-        neutPoint = self._findDataIntercept(self.rVal, self.gVal, line)
-        
-        if verbose is True:
-            return neutPoint, [r, g]
-        else:
-            return neutPoint
-
-    def EE_CMFtoRGB(self, rgb=None):
-        '''
-        '''
-        if rgb is None:
-            self.rVal, self.gVal, self.bVal = self.TrichromaticEquation(
-                            self.CMFs[0, :], self.CMFs[1, :], self.CMFs[2, :])
-        else:
-            return self.TrichromaticEquation(rgb[0], rgb[1], rgb[2])
-
     def find_copunctuals(self):
         '''
         '''
-        protan = self.find_rgb(np.array([1, 0, 0]))
-        deutan = self.find_rgb(np.array([0, 1, 0]))
-        tritan = self.find_rgb(np.array([0, 0, 1]))
+        protan = self.lms_to_rgb(np.array([1, 0, 0]))
+        deutan = self.lms_to_rgb(np.array([0, 1, 0]))
+        tritan = self.lms_to_rgb(np.array([0, 0, 1]))
         
         self.copunctuals = {'protan': protan, 
                             'deutan': deutan, 
@@ -310,7 +297,7 @@ class colorSpace(object):
         s_ = np.interp(testLight, self.spectrum, Snorm)
 
         if R == None or G == None or B == None:
-            rOut, gOut, bOut = self.find_rgb(LMS=np.array([l_, m_, s_]))
+            rOut, gOut, bOut = self.lms_to_rgb(LMS=np.array([l_, m_, s_]))
         else:
             rOut, gOut, bOut = l_, m_, s_
             
@@ -343,20 +330,13 @@ class colorSpace(object):
             raise IndexError('Pure light not found. Are you sure the [r, g] \
                             coords lie on the spectral line?')
         
-    def find_rgb(self, LMS):
+    def lms_to_rgb(self, LMS):
         '''
         '''
         cmf = np.dot(np.linalg.inv(self.convMatrix), LMS)
         cmf[0], cmf[1], cmf[2] = self._EEcmf(cmf[0], cmf[1], cmf[2])
         out = self.TrichromaticEquation(cmf[0], cmf[1], cmf[2])
         return out
-
-    def find_BYweights(self):
-        '''Function not finished
-        '''
-        neut, RG = self.BY2lambda(s, m, 0, True)
-        n, rg  = self.BY2lambda(0.48, 0.52, 0, True)
-        print self.find_testlightFromRG(n[0], n[1])
 
     def _EEcmf(self, r_, g_, b_):   
         '''

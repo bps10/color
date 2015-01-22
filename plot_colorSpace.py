@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 import matplotlib.pylab as plt
-
 import numpy as np
 
 from base import plot as pf
@@ -138,7 +137,7 @@ def plotColorSpace(color):
     plt.show()
 
 
-def plot_dichromatic_system(space, hybrid='ls', clip=True):
+def plot_dichromatic_system(hybrid='ls', clip=True):
     '''
     '''
     space = colorSpace(fundamental='neitz', LMSpeaks=[559, 530, 421])
@@ -160,9 +159,9 @@ def plot_dichromatic_system(space, hybrid='ls', clip=True):
         else:
             raise InputError('hybrid must be ls, lm or ms')
 
-        neutral_points, RG = space.find_spect_neutral([l, m, s], True)
+        neutral_points, copunct = space.find_spect_neutral([l, m, s], True)
         for neut in neutral_points:
-            space.cs_ax.plot([neut[0], RG[0]], [neut[1], RG[1]], 
+            space.cs_ax.plot([neut[0], copunct[0]], [neut[1], copunct[1]], 
                              '-o', c=(np.abs(l), np.abs(m), np.abs(s)), 
                              markersize=8, linewidth=2)
 
@@ -219,7 +218,7 @@ def main(args):
         plotConfusionLines()
 
     if args.dichromat:
-        plot_dichromatic_system(False, hybrid=args.hybrid)
+        plot_dichromatic_system(hybrid=args.hybrid)
     
     if args.ConeSpace:
         plotConeSpace()
