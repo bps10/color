@@ -270,11 +270,11 @@ class colorSpace(object):
             return self.TrichromaticEquation(rgb[0], rgb[1], rgb[2])
 
 
-    def find_spect_neutral(self, lms, verbose=False):
+    def find_spect_neutral(self, lms, white=[1/3, 1/3], verbose=False):
         '''
         '''        
         r, g, b = self.lms_to_rgb(np.asarray(lms))
-        line, slope, b = self._lineEq(r, g, verbose=True)
+        line, slope, b = self._lineEq(r, g, white[0], white[1], verbose=True)
         
         rval = self.rVal
         gval = self.gVal
@@ -520,7 +520,7 @@ class colorSpace(object):
                 turn = [500, 510]
             else:
                 JuddV = True
-                offset = 0.01
+                offset = 0.015
                 turn = [520, 530]
         
         elif Luv:
