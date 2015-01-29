@@ -270,11 +270,74 @@ class colorSpace(object):
             return self.TrichromaticEquation(rgb[0], rgb[1], rgb[2])
 
 
-    def find_spect_neutral(self, lms, white=[1/3, 1/3], verbose=False):
+    def find_purity(self, rg, white=[1 / 3, 1 / 3]):
         '''
+        '''
+        rg = np.asarray(rg)
+        white = np.asarray(white)
+        if len(rg) == 2:
+            rgb = np.array([rg[0], rg[1], 1 - (rg.sum())])
+        else:
+            rgb = rg
+        if len(white) == 2:
+            white = np.array([white[0], white[1], 1 - white.sum()])
+        neutral_points = self.find_spect_neutral(rgb)
+
+        ref = None
+        for neutral in neutral_points:
+            r = round(rgb[0], 4)
+            r_n = round(neutral[0], 4)
+            if r <= r_n and r > white[0]:
+                ref = neutral
+            elif r >= r_n and r < white[0]:
+                ref = neutral
+            elif r == white[0]:
+                if rgb[1] > white[1]:
+                    ref = neutral
+
+        if ref is None:
+            raise ValueError('ref spectrum locus not found')
+        else:
+            ref = np.asarray(ref)
+        purity = (np.linalg.norm(rgb[:2] - white[:2]) / 
+                  np.linalg.norm(ref[:2] - white[:2]))
+                    
+        return round(purity, 2)
+
+
+    def find_dominant_wl(self, rg, white=[1/3, 1/3]):
+        '''Find the dominant wavelength from a given point within the
+        chromaticity diagram. If extra spectral, returns str.
         '''        
-        r, g, b = self.lms_to_rgb(np.asarray(lms))
-        line, slope, b = self._lineEq(r, g, white[0], white[1], verbose=True)
+        rg = np.asarray(rg)
+        white = np.asarray(white)
+        if len(rg) == 2:
+            rgb = [rg[0], rg[1], 1 - (rg.sum())]
+        else:
+            rgb = rg
+        if len(white) == 2:
+            white = [white[0], white[1], 1 - white.sum()]
+        neutral_points = self.find_spect_neutral(rgb)
+        dom = None
+        for neutral in neutral_points:
+            if rgb[0] <= neutral[0] and rgb[0] > white[0]:
+                dom = self.find_testlightFromRG(neutral[0], neutral[1])
+            elif rgb[0] >= neutral[0] and rgb[0] < white[0]:
+                dom = self.find_testlightFromRG(neutral[0], neutral[1])
+
+        # must be extra spectral
+        if dom is None or dom < self.spectrum[0] or dom > self.spectrum[-1]: 
+            neutral = neutral_points[0]
+            dom = -1 * self.find_testlightFromRG(neutral[0], neutral[1])
+
+        return dom
+
+    def find_spect_neutral(self, rgb, white=[1/3, 1/3]):
+        '''Find two spectral neutral points from a given point in 
+        chromaticity space that passes through a given white point.
+        '''
+        line, slope, b = self._lineEq(rgb[0], rgb[1], 
+                                      white[0], white[1], verbose=True)
         
         rval = self.rVal
         gval = self.gVal
@@ -308,10 +371,7 @@ class colorSpace(object):
             [rv, gv] = np.dot(R, [x, y_offset[cross]])
             neutPoint.append([rv, gv])
 
-        if verbose is True:
-            return neutPoint, [r, g]
-        else:
-            return neutPoint
+        return neutPoint
 
     def find_copunctuals(self):
         '''

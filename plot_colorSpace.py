@@ -159,7 +159,8 @@ def plot_dichromatic_system(hybrid='ls', clip=True):
         else:
             raise InputError('hybrid must be ls, lm or ms')
 
-        neutral_points, copunct = space.find_spect_neutral([l, m, s], True)
+        copunct = space.lms_to_rgb([l, m, s])
+        neutral_points = space.find_spect_neutral(copunct)
         for neut in neutral_points:
             space.cs_ax.plot([neut[0], copunct[0]], [neut[1], copunct[1]], 
                              '-o', c=(np.abs(l), np.abs(m), np.abs(s)), 
@@ -243,7 +244,7 @@ if __name__ == '__main__':
                         help="plot color space")
     parser.add_argument("-c", "--ConfusionLines", action="store_true",
                         help="plot color space with confusion lines")
-    parser.add_argument("-q", "--dichromat", action="store_true",
+    parser.add_argument("-d", "--dichromat", action="store_true",
                         help="plot blue-yellow system on color space")   
     parser.add_argument("--hybrid", type=str, default='ls',
                         help="set hybrid pigment for dichromatic system")
