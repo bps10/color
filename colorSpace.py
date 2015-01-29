@@ -7,7 +7,7 @@ import matplotlib.pylab as plt
 from base import plot as pf
 from base import spectsens as ss
 from base import optics as op
-
+from base.data import cart2pol
 from genLMS import genLMS
 
 class colorSpace(object):
@@ -281,7 +281,7 @@ class colorSpace(object):
             rgb = rg
         if len(white) == 2:
             white = np.array([white[0], white[1], 1 - white.sum()])
-        neutral_points = self.find_spect_neutral(rgb)
+        neutral_points = self.find_spect_neutral(rgb, white)
 
         ref = None
         for neutral in neutral_points:
@@ -308,26 +308,40 @@ class colorSpace(object):
     def find_dominant_wl(self, rg, white=[1/3, 1/3]):
         '''Find the dominant wavelength from a given point within the
         chromaticity diagram. If extra spectral, returns str.
-        '''        
+        '''
         rg = np.asarray(rg)
         white = np.asarray(white)
+        ## make sure both are len 3 vectors
         if len(rg) == 2:
-            rgb = [rg[0], rg[1], 1 - (rg.sum())]
+            rgb = np.array([rg[0], rg[1], 1 - (rg.sum())])
         else:
             rgb = rg
         if len(white) == 2:
-            white = [white[0], white[1], 1 - white.sum()]
-        neutral_points = self.find_spect_neutral(rgb)
-        dom = None
-        for neutral in neutral_points:
-            if rgb[0] <= neutral[0] and rgb[0] > white[0]:
-                dom = self.find_testlightFromRG(neutral[0], neutral[1])
-            elif rgb[0] >= neutral[0] and rgb[0] < white[0]:
-                dom = self.find_testlightFromRG(neutral[0], neutral[1])
+            white = np.array([white[0], white[1], 1 - white.sum()])
+        
+        point = rgb - white
+        # make sure white point wasn't fed in
+        if round(point[0], 2) == 0.0 and round(point[1] == 0.0, 2): 
+            return 0
 
-        # must be extra spectral
-        if dom is None or dom < self.spectrum[0] or dom > self.spectrum[-1]: 
-            neutral = neutral_points[0]
+        neutral_points = self.find_spect_neutral(rgb, white)
+        dom = None
+        for i, neutral in enumerate(neutral_points):
+            n = neutral - white[:2]
+            a = int(cart2pol(n[0], n[1])[0])
+            b = int(cart2pol(point[0], point[1])[0])
+            if a == b:
+                dom = self.find_testlightFromRG(neutral[0], neutral[1])
+                break
+
+        # must be extra spectral: use complementary color
+        if dom is None or dom < self.spectrum[0]:
+            if i == 0:
+                i = 1
+            if i == 1:
+                i = 0
+            neutral = neutral_points[i]
+
             dom = -1 * self.find_testlightFromRG(neutral[0], neutral[1])
 
         return dom
@@ -408,32 +422,30 @@ class colorSpace(object):
         return [rOut, gOut, bOut]        
     
     def find_testlightFromRG(self, r, g):
+        '''Returns -1 if not found (extra spectral or doesn't live on locus)
         '''
-        '''
-        err = lambda r, g, lam: ((r - self.rVal[lam])**2 + (g - 
-                                self.gVal[lam])**2)
+        err = lambda r, g, lam: np.sqrt((r - self.rVal[lam]) ** 2 + (g - 
+                                self.gVal[lam]) ** 2)
         i = 0
         startE = err(r, g, i)
-        error = True
-        try:
-            while error:
-                e = err(r, g, i)
-                
-                if startE < e and e < 10e-2:
-                    error = False
-                else:
-                    startE = e
-                    i += 1
-                    
-            #linear interpolate between points
-            t0 = err(r, g, i)
-            t1 = err(r, g, i + 1)
-            outLam = self.spectrum[i] + (0 - t0 / (t1 - t0))
-            return outLam
-        except IndexError:
-            raise IndexError('Pure light not found. Are you sure the [r, g] \
-                            coords lie on the spectral line?')
-        
+        forward = True
+        while forward:
+            e = err(r, g, i)
+            if startE < e and e < 0.1:
+                forward = False
+            else:
+                startE = e
+                if i + 1 > len(self.spectrum) - 1:
+                    return -1 # either extra spectral or not on spec locus
+                i += 1
+
+        t0 = err(r, g, i)
+        t1 = err(r, g, i - 1)
+        e1 = t1 / (t1 + t0)
+        # take a weighted averge of the points
+        outLam = self.spectrum[i] * e1 + self.spectrum[i - 1] * (1 - e1)
+        return outLam
+
     def lms_to_rgb(self, LMS):
         '''
         '''
