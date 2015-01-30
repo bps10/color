@@ -335,15 +335,17 @@ class colorSpace(object):
                 break
 
         # must be extra spectral: use complementary color
-        if dom is None or dom < self.spectrum[0]:
+        if dom == -1:
             if i == 0:
                 i = 1
             if i == 1:
                 i = 0
             neutral = neutral_points[i]
-
+            # return as negative number to indicate it is a complement
             dom = -1 * self.find_testlightFromRG(neutral[0], neutral[1])
-
+        elif dom == None:
+            raise ValueError('dominant wavelength not found')
+            
         return dom
 
     def find_spect_neutral(self, rgb, white=[1/3, 1/3]):
@@ -426,12 +428,22 @@ class colorSpace(object):
         '''
         err = lambda r, g, lam: np.sqrt((r - self.rVal[lam]) ** 2 + (g - 
                                 self.gVal[lam]) ** 2)
+
+        # Check if point is extra spectral
+        a = np.array([r, g]) - np.array([self.rVal[0], self.gVal[0]])
+        b = np.array([self.rVal[-1], self.gVal[-1]]) - np.array(
+            [self.rVal[0], self.gVal[0]])
+        a = int(cart2pol(a[0], a[1])[0])
+        b = int(cart2pol(b[0], b[1])[0])
+        if a == b:
+            return -1 # This point is extra spectral
+
         i = 0
         startE = err(r, g, i)
         forward = True
         while forward:
             e = err(r, g, i)
-            if startE < e and e < 0.1:
+            if startE < e and e < 0.05:
                 forward = False
             else:
                 startE = e
