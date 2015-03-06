@@ -6,7 +6,8 @@ import numpy as np
 import matplotlib.pylab as plt
 from math import factorial
 
-import colorModel as cm
+import standard_model as cm
+#import colorModel as cm
 from base import plot as pf
 
 
@@ -344,7 +345,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
 
     if plotModel:
         model = cm.colorModel(age=age)
-        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
+        model.genModel(ConeRatio={'fracLvM': 0.45, 's': 0.05, },
             maxSens=maxSens, OD=OD)
 
         FirstStage = model.returnFirstStage() 
@@ -376,7 +377,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
             verticalalignment='top',
             transform=ax1.transAxes)
 
-        model.genModel(ConeRatio={'fracLvM': 0.5, 's': 0.05, },
+        model.genModel(ConeRatio={'fracLvM': 0.65, 's': 0.05, },
             maxSens=maxSens, OD=OD)
         ThirdStage = model.returnThirdStage()
         
@@ -399,7 +400,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
             transform=ax2.transAxes)
 
 
-        model.genModel(ConeRatio={'fracLvM': 0.75, 's': 0.05, },
+        model.genModel(ConeRatio={'fracLvM': 0.45, 's': 0.05, },
             maxSens=maxSens, OD=OD)
         ThirdStage = model.returnThirdStage()
         

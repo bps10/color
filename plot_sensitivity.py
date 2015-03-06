@@ -2,14 +2,14 @@
 import matplotlib.pylab as plt
 import numpy as np
 
-from base.optics import filters
+from base.optics import filters as filt
 from base import spectsens as ss
 from base import plot as pf
 from genLMS import genLMS
 
 
 maxLambda = 770           
-filters, spectrum = filters.stockman(minLambda=390, 
+filters, spectrum = filt.stockman(minLambda=390, 
             maxLambda=maxLambda, RETURN_SPECTRUM=True, 
             resolution=1)
 
@@ -41,9 +41,30 @@ def plotCompare(compare=['stockman', 'stockSpecSens', 'neitz'],
 
     plt.show()
 
-def plotFilters(invert=False, log=True):
+def plotFilters(invert=False, log=False, lens_only=True, 
+                macula_only=False, lens_age=[20, 40, 60, 80], 
+                spectrum=spectrum, stiles=True):
     '''
     '''
+    if macula_only:
+        filters, spectrum = filt.stockman(minLambda=400, 
+                                             maxLambda=700, 
+                                             RETURN_SPECTRUM=True, 
+                                             ONLY_MACULA=True,
+                                             resolution=1)
+    if lens_only and lens_age is None:
+        filters, spectrum = filt.stockman(minLambda=400, 
+                                             maxLambda=700, 
+                                             RETURN_SPECTRUM=True, 
+                                             ONLY_LENS=True,
+                                             resolution=1)
+    if lens_only and lens_age is not None:
+        spectrum = np.arange(400, 700)
+        filters = np.zeros((len(spectrum), len(lens_age)))
+        for i, age in enumerate(lens_age):
+            filters[:, i] = filt.lens_age_correction(age, spectrum, 
+                                                     stiles=stiles)
+
     fig = plt.figure()
     fig.set_tight_layout(True)
     ax = fig.add_subplot(111)
@@ -54,14 +75,19 @@ def plotFilters(invert=False, log=True):
     else:
         ax.plot(spectrum, filters, 'k', linewidth=2)
 
-    ax.set_ylabel('log density')
+
     ax.set_xlabel('wavelength (nm)')
-    ax.set_xlim([380, 781])
-    ax.set_ylim([-10, max(filters)])
+    ax.set_xlim([400, 700])
+    if log:
+        ax.set_ylim([-10, max(filters)])
+        ax.set_ylabel('log density')
+    else:
+        ax.set_ylabel('density')
 
     if invert:
         pf.invert(ax, fig, bk_color='k')
     plt.show()
+
 
 def plotSpecSens(plot_norm=True, log=False, invert=False):
     '''
