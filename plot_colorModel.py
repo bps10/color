@@ -343,11 +343,6 @@ def plotModel(cm, plotModel=True, plotCurveFamily=False,
 
     if plotModel:
         model = cm.colorModel(age=age)
-        model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, },
-            maxSens=maxSens, OD=OD)
-
-        FirstStage = model.returnFirstStage() 
-        ThirdStage = model.returnThirdStage()  
 
         fig = plt.figure()
         fig.set_tight_layout(True)
@@ -358,37 +353,29 @@ def plotModel(cm, plotModel=True, plotCurveFamily=False,
         pf.AxisFormat()     
         pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 4])
         ax.spines['left'].set_smart_bounds(False)
-
-        ax.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b-', linewidth=3, label=str(int(fracLvM * 100)) + "%L")
-        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r-', linewidth=3)
-
-        LvM = fracLvM + 0.2
-        model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
-            maxSens=maxSens, OD=OD)
-        ThirdStage = model.returnThirdStage()
         
-        ax.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b--', linewidth=3, label=str(int(LvM * 100)) + "%L")
-        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r--', linewidth=3)
-
-        LvM = fracLvM + 0.4
-        model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
-            maxSens=maxSens, OD=OD)
-        ThirdStage = model.returnThirdStage()
+        style = ['-', '--', '-.']
+        for i, LvM in enumerate(np.array([0.0, 0.2, 0.4]) + fracLvM):
+            model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
+                           maxSens=maxSens, OD=OD)
+            FirstStage = model.returnFirstStage() 
+            ThirdStage = model.returnThirdStage()  
         
-        ax.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b-.', linewidth=3, label=str(int(LvM * 100)) + "%L")
-        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r-.', linewidth=3)
+            # get colors
+            blue = ThirdStage['lCenter'].clip(0, 1000)
+            yellow = ThirdStage['lCenter'].clip(-1000, 0)
+            red = ThirdStage['mCenter'].clip(0, 1000)
+            green = ThirdStage['mCenter'].clip(-1000, 0)
+            # plot
+            ax.plot(FirstStage['lambdas'], blue,
+                    'b' + style[i], label=str(int(LvM * 100)) + "%L")
+            ax.plot(FirstStage['lambdas'], yellow,
+                    'y' + style[i])
+            ax.plot(FirstStage['lambdas'], green, 'g' + style[i])
+            ax.plot(FirstStage['lambdas'], red, 'r' + style[i])
+            # add black line at zero
+            ax.plot(FirstStage['lambdas'],
+                    np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=2.0)
 
         ax.set_ylim(ylim)
         ax.set_xlim([FirstStage['wavelen']['startWave'],
