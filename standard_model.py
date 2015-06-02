@@ -31,7 +31,7 @@ class colorModel():
     based on individual measurments.
 
     '''
-    def __init__(self, center_cones=1, q=1.0, age=None, mac_const=1.0):
+    def __init__(self, center_cones=1, q=0.0, age=None, mac_const=1.0):
         '''
         '''
         self.test = False
@@ -115,15 +115,17 @@ class colorModel():
                     uniqueGreen.append(lambdas[zero_cross[0]])
 
                 if self.mRatio == 0:
-                    uniqueBlue.append(467)
-                    uniqueYellow.append(575)
+                    uniqueBlue.append(0)
+                    uniqueYellow.append(np.nan)
                 else:
                     zero_cross = np.where(np.diff(np.sign(RG)))[0]
-                    uniqueBlue.append(lambdas[zero_cross[0]])
+
+                    uniqueBlue.append(0)
+
                     try:
-                        uniqueYellow.append(lambdas[zero_cross[1]])
-                    except:
-                        uniqueYellow.append(600)
+                        uniqueYellow.append(lambdas[zero_cross[0]])
+                    except IndexError:
+                        uniqueYellow.append(np.nan)
                 LMratio.append(i)
 
         self.uniqueHues = {
@@ -143,14 +145,14 @@ class colorModel():
         BY = self.ThirdStage['lCenter']
 
         if self.lRatio == 0:
-            uniqueGreen = np.nan
+            uniqueGreen = 553
         else:
             zero_cross = np.where(np.diff(np.sign(BY)))[0]
             uniqueGreen = lambdas[zero_cross[0]]
-        
+
         if self.mRatio == 0:
-            uniqueBlue = np.nan
-            uniqueYellow = np.nan
+            uniqueBlue = 474
+            uniqueYellow = 577
         else:
             zero_cross = np.where(np.diff(np.sign(RG)))[0]
             uniqueBlue = lambdas[zero_cross[0]]
@@ -213,6 +215,7 @@ class colorModel():
         # get cones into dict for optimization below
         L_cones = self.FirstStage['L_cones']
         M_cones = self.FirstStage['M_cones']
+        S_cones = self.FirstStage['S_cones']
         cones = {
             's': self.FirstStage['S_cones'],
             'm': self.FirstStage['M_cones'],
@@ -241,8 +244,8 @@ class colorModel():
                         if propL > 0.5:
 
                             lmsV_L = optimizeChannel(self._q,
-                                                    cones, percent,
-                                                    Center=center_cones)
+                                                     cones, percent,
+                                                     Center=S_cones)
 
                             self.SecondStage['lmsV_L'][_l][Lcenter] = lmsV_L
 
@@ -259,7 +262,6 @@ class colorModel():
                     _l += 1
                     i += 1
                         
-
     def genThirdStage(self):
         '''Compute the third stage in the model
         '''

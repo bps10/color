@@ -6,7 +6,6 @@ import numpy as np
 import matplotlib.pylab as plt
 from math import factorial
 
-import colorModel as cm
 from base import plot as pf
 
 
@@ -34,7 +33,7 @@ def binomPlot():
     plt.show()
 
 
-def eccentricityAnalysis():
+def eccentricityAnalysis(cm):
     '''
     '''
     cond = {0: {'percent': 0.40, 'lines': '-'},
@@ -103,7 +102,7 @@ def MetaAnalysis():
                 print name + ': ', weight / total, total
 
 
-def HueScaling(lPeak=559):
+def HueScaling(cm, lPeak=559):
     '''
     '''
     hues = cm.getHueScalingData(
@@ -128,7 +127,7 @@ def HueScaling(lPeak=559):
     plt.show()
 
 
-def LMratiosAnalysis(Volbrecht1997=True, returnVals=False, 
+def LMratiosAnalysis(cm, Volbrecht1997=True, returnVals=False, 
                         plot=True, savefigs=False):
     '''
     '''
@@ -260,7 +259,7 @@ def LMratiosAnalysis(Volbrecht1997=True, returnVals=False,
                                                 np.sum(volb['count']))
         
 
-def plotModel(plotModel=True, plotCurveFamily=False,
+def plotModel(cm, plotModel=True, plotCurveFamily=False,
               plotUniqueHues=False, savefigs=False, 
               fracLvM=0.25, SHOW=True, OD=None, age=None,
               maxSens=None):
@@ -344,83 +343,62 @@ def plotModel(plotModel=True, plotCurveFamily=False,
 
     if plotModel:
         model = cm.colorModel(age=age)
-        model.genModel(ConeRatio={'fracLvM': 0.25, 's': 0.05, },
+        model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, },
             maxSens=maxSens, OD=OD)
 
         FirstStage = model.returnFirstStage() 
         ThirdStage = model.returnThirdStage()  
 
-        fig = plt.figure(figsize=(8.5, 11))
+        fig = plt.figure()
         fig.set_tight_layout(True)
-        ax1 = fig.add_subplot(311)
-        ax2 = fig.add_subplot(312)
-        ax3 = fig.add_subplot(313)
-        
-        
+        ax = fig.add_subplot(111)
+
+        ylim = [-0.28, 0.28]
         
         pf.AxisFormat()     
-        pf.TufteAxis(ax1, ['left', ], Nticks=[5, 3])
-        ax1.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax1.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b', linewidth=3)
-        ax1.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r', linewidth=3)
-        ax1.set_xlim([FirstStage['wavelen']['startWave'],
-                         FirstStage['wavelen']['endWave']])
-        #ax1.set_ylabel('activity')
-        ax1.yaxis.set_label_coords(-0.2, 0.5)
-        ax1.set_ylim([-0.20, 0.21])
-        ax1.text(0.95, 0.95, '25% L', fontsize=16,
-            horizontalalignment='right',
-            verticalalignment='top',
-            transform=ax1.transAxes)
+        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 4])
+        ax.spines['left'].set_smart_bounds(False)
 
-        model.genModel(ConeRatio={'fracLvM': 0.5, 's': 0.05, },
+        ax.plot(FirstStage['lambdas'], 
+                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
+        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'b-', linewidth=3, label=str(int(fracLvM * 100)) + "%L")
+        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'r-', linewidth=3)
+
+        LvM = fracLvM + 0.2
+        model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
             maxSens=maxSens, OD=OD)
         ThirdStage = model.returnThirdStage()
         
-        pf.AxisFormat()     
-        pf.TufteAxis(ax2, ['left', ], Nticks=[5, 3])
-        ax2.plot(FirstStage['lambdas'], 
+        ax.plot(FirstStage['lambdas'], 
                  np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax2.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b', linewidth=3)
-        ax2.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r', linewidth=3)
-        ax2.set_xlim([FirstStage['wavelen']['startWave'],
-                         FirstStage['wavelen']['endWave']])
-        ax2.set_ylabel('sensitivity')
-        ax2.yaxis.set_label_coords(-0.2, 0.5)
-        ax2.set_ylim([-0.20, 0.21])
-        ax2.text(0.95, 0.95, '50% L', fontsize=16, 
-            horizontalalignment='right',
-            verticalalignment='top',
-            transform=ax2.transAxes)
+        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'b--', linewidth=3, label=str(int(LvM * 100)) + "%L")
+        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'r--', linewidth=3)
 
-
-        model.genModel(ConeRatio={'fracLvM': 0.75, 's': 0.05, },
+        LvM = fracLvM + 0.4
+        model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
             maxSens=maxSens, OD=OD)
         ThirdStage = model.returnThirdStage()
         
-        pf.AxisFormat()     
-        pf.TufteAxis(ax3, ['left', 'bottom'], Nticks=[5, 3])
-        ax3.plot(FirstStage['lambdas'], 
+        ax.plot(FirstStage['lambdas'], 
                  np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax3.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b', linewidth=3)
-        ax3.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r', linewidth=3)
-        ax3.set_xlim([FirstStage['wavelen']['startWave'],
+        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
+                'b-.', linewidth=3, label=str(int(LvM * 100)) + "%L")
+        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
+                'r-.', linewidth=3)
+
+        ax.set_ylim(ylim)
+        ax.set_xlim([FirstStage['wavelen']['startWave'],
                          FirstStage['wavelen']['endWave']])
-        #ax3.set_ylabel('activity')
-        ax3.yaxis.set_label_coords(-0.2, 0.5)
-        ax3.set_ylim([-0.20, 0.21])
-        ax3.text(0.95, 0.95, '75% L', fontsize=16, 
-            horizontalalignment='right',
-            verticalalignment='top',
-            transform=ax3.transAxes)
-        ax3.set_xlabel('wavelength (nm)')
+
+        ax.legend(loc='upper right', fontsize=18)
+        ax.yaxis.set_label_coords(-0.2, 0.5)
+
+        ax.set_ylabel('sensitivity')
+        ax.set_xlabel('wavelength (nm)')
         
         if savefigs:
             firsthalf = '../bps10.github.com/presentations/static/figures/'
@@ -432,11 +410,12 @@ def plotModel(plotModel=True, plotCurveFamily=False,
     if plotUniqueHues:
         model = cm.colorModel(age=age)
 
-        fig = plt.figure(figsize=(8, 6))
+        fig = plt.figure()
         fig.set_tight_layout(True)
         ax = fig.add_subplot(111)
         pf.AxisFormat(linewidth=3)
         pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[4, 5])
+        ax.spines['bottom'].set_smart_bounds(False)
 
         style = ['-', '--', '-.']
         i = 0
@@ -458,6 +437,7 @@ def plotModel(plotModel=True, plotCurveFamily=False,
 
         ax.set_xlim([20, 100])
         ax.set_ylim([460, 600])
+
         ax.set_ylabel('wavelength (nm)')
         ax.set_xlabel('% L vs M')
 
@@ -473,6 +453,11 @@ def plotModel(plotModel=True, plotCurveFamily=False,
 def main(args):
     '''
     '''
+    if args.model_type == 'standard':
+        import standard_model as cm
+    elif args.model_type == 'neitz':
+        import colorModel as cm
+
     if args.LM < 1 and args.LM > 0:
         LMratio = args.LM
     else:
@@ -482,18 +467,18 @@ def main(args):
         binomPlot()
     
     if args.eccen:
-        eccentricityAnalysis()
+        eccentricityAnalysis(cm)
     
     if args.ratio:
-        LMratiosAnalysis(Volbrecht1997=True, savefigs=args.save)
+        LMratiosAnalysis(cm, Volbrecht1997=True, savefigs=args.save)
 
     if args.hues:
-        HueScaling()
+        HueScaling(cm)
 
     if args.kuehni:
         MetaAnalysis()
 
-    plotModel( 
+    plotModel(cm,
             plotModel=args.model,
             plotCurveFamily=args.curve,
             plotUniqueHues=args.unique, 
@@ -522,6 +507,8 @@ if __name__ == '__main__':
     parser.add_argument("-q", "--hues", action="store_true",
                         help="plot hue scaling data")
 
+    parser.add_argument("-l", "--model_type", default="neitz",
+                        help="set model to assume (neitz or standard)")
     parser.add_argument("-s", "--save", action="store_true",
                         help="save plots - not working right now")
     parser.add_argument("--LM", type=float, default=0.25,
