@@ -115,15 +115,17 @@ class colorModel():
                     uniqueGreen.append(lambdas[zero_cross[0]])
 
                 if self.mRatio == 0:
-                    uniqueBlue.append(467)
-                    uniqueYellow.append(575)
+                    uniqueBlue.append(0)
+                    uniqueYellow.append(np.nan)
                 else:
                     zero_cross = np.where(np.diff(np.sign(RG)))[0]
-                    uniqueBlue.append(lambdas[zero_cross[0]])
+
+                    uniqueBlue.append(0)
+
                     try:
-                        uniqueYellow.append(lambdas[zero_cross[1]])
-                    except:
-                        uniqueYellow.append(600)
+                        uniqueYellow.append(lambdas[zero_cross[0]])
+                    except IndexError:
+                        uniqueYellow.append(np.nan)
                 LMratio.append(i)
 
         self.uniqueHues = {
@@ -182,21 +184,21 @@ class colorModel():
                             OpticalDensity=OD[0],
                             EndWavelength=endLambda, 
                             resolution=step)
-        L_cones /= self.lensMacula
+        L_cones /= self.lensMacula * lambdas / lambdas[-1]
         
         M_cones = ss.neitz(LambdaMax=self.maxSens['m'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=OD[1],
                             EndWavelength=endLambda, 
                             resolution=step)
-        M_cones /= self.lensMacula
+        M_cones /= self.lensMacula * lambdas / lambdas[-1]
         
         S_cones = ss.neitz(LambdaMax=self.maxSens['s'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=OD[2],
                             EndWavelength=endLambda, 
                             resolution=step)
-        S_cones /= self.lensMacula
+        S_cones /= self.lensMacula * lambdas / lambdas[-1]
 
         self.FirstStage = {
             'lambdas': lambdas,

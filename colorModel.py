@@ -31,7 +31,7 @@ class colorModel():
     based on individual measurments.
 
     '''
-    def __init__(self, center_cones=1, q=1.300, age=None, mac_const=1.0):
+    def __init__(self, center_cones=1, q=1.0, age=None, mac_const=1.0):
         '''
         '''
         self.test = False
@@ -143,14 +143,14 @@ class colorModel():
         BY = self.ThirdStage['lCenter']
 
         if self.lRatio == 0:
-            uniqueGreen = 553
+            uniqueGreen = np.nan
         else:
             zero_cross = np.where(np.diff(np.sign(BY)))[0]
             uniqueGreen = lambdas[zero_cross[0]]
-
+        
         if self.mRatio == 0:
-            uniqueBlue = 474
-            uniqueYellow = 577
+            uniqueBlue = np.nan
+            uniqueYellow = np.nan
         else:
             zero_cross = np.where(np.diff(np.sign(RG)))[0]
             uniqueBlue = lambdas[zero_cross[0]]
@@ -182,21 +182,21 @@ class colorModel():
                             OpticalDensity=OD[0],
                             EndWavelength=endLambda, 
                             resolution=step)
-        L_cones /= self.lensMacula
+        L_cones /= self.lensMacula * lambdas / lambdas[-1]
         
         M_cones = ss.neitz(LambdaMax=self.maxSens['m'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=OD[1],
                             EndWavelength=endLambda, 
                             resolution=step)
-        M_cones /= self.lensMacula
+        M_cones /= self.lensMacula * lambdas / lambdas[-1]
         
         S_cones = ss.neitz(LambdaMax=self.maxSens['s'], LOG=False,
                             StartWavelength=startLambda,
                             OpticalDensity=OD[2],
                             EndWavelength=endLambda, 
                             resolution=step)
-        S_cones /= self.lensMacula
+        S_cones /= self.lensMacula * lambdas / lambdas[-1]
 
         self.FirstStage = {
             'lambdas': lambdas,
