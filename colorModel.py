@@ -196,6 +196,7 @@ class colorModel():
                             OpticalDensity=OD[2],
                             EndWavelength=endLambda, 
                             resolution=step)
+
         S_cones /= self.lensMacula * lambdas / lambdas[-1]
 
         self.FirstStage = {
