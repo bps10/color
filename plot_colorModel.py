@@ -5,11 +5,12 @@ import os
 import numpy as np
 import matplotlib.pylab as plt
 from math import factorial
+from operator import itemgetter
 
 from base import plot as pf
 
 
-def binomPlot():
+def binomPlot(cm):
     '''
     '''
     fig = plt.figure(figsize=(8, 6))
@@ -28,7 +29,7 @@ def binomPlot():
             color = [probL / 10, probM / 10, 0]
         ax.plot(np.arange(0,101), dist, c=color)
 
-    ax.set_xlabel("%L v M")
+    ax.set_xlabel("%L")
     ax.set_ylabel("probability")
     plt.show()
 
@@ -37,8 +38,8 @@ def eccentricityAnalysis(cm):
     '''
     '''
     cond = {0: {'percent': 0.40, 'lines': '-'},
-                  1: {'percent': 0.60, 'lines': '--'},
-                  2: {'percent': 0.80, 'lines': ':'}, }
+            1: {'percent': 0.60, 'lines': '--'},
+            2: {'percent': 0.80, 'lines': ':'}, }
 
     fig = plt.figure(figsize=(8, 6))
     fig.set_tight_layout(True)
@@ -66,7 +67,6 @@ def eccentricityAnalysis(cm):
         ax.plot(center_cones, blue, 'bo' + c['lines'])
         ax.plot(center_cones, yellow, 'yo' + c['lines'])
 
-    #ax.set_xlim([0.85, 5.15])
     ax.set_ylim([460, 625])
     ax.set_xlabel("number of center cones")
     ax.set_ylabel("wavelength (nm)")
@@ -109,12 +109,7 @@ def HueScaling(cm, lPeak=559):
                 ConeRatio={'fracLvM': 0.70, 's': 0.05, },
                 maxSens={'l': lPeak, 'm': 530.0, 's': 417.0, })
     
-    fig = plt.figure(figsize=(8, 6))
-    fig.set_tight_layout(True)
-    ax = fig.add_subplot(111)
-    pf.AxisFormat(linewidth=3)
-    pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 5])
-
+    ax = pf.get_axes()[0]
     ax.plot(hues['lambdas'], hues['red'], 'r')
     ax.plot(hues['lambdas'], hues['green'], 'g') 
     ax.plot(hues['lambdas'], hues['blue'], 'b') 
@@ -132,7 +127,7 @@ def LMratiosAnalysis(cm, Volbrecht1997=True, returnVals=False,
     '''
     '''
 
-    model = cm.colorModel(q=1.300)
+    model = cm.colorModel()
     
     model.genModel()
     #model.findUniqueHues()
@@ -226,31 +221,29 @@ def LMratiosAnalysis(cm, Volbrecht1997=True, returnVals=False,
         ax3.set_xlim([514, 590])
         ax4.set_xlim([460, 536])
         if Volbrecht1997:
-            ax2.set_ylim([-0.002, np.max(np.max(freqV), np.max(freqGreen)) + 0.01])
+            ax2.set_ylim([-0.002, np.max(np.max(freqV), 
+                                         np.max(freqGreen)) + 0.01])
         else:
             ax2.set_ylim([-0.002, np.max(freqGreen) + 0.01])
         ax2.yaxis.set_label_coords(-0.2, 0.5)
         
         ax3.set_ylabel('proportion')
-        #ax3.set_xlabel('unique yellow (nm)')        
-        #ax3.set_xlim([460, 590])
         ax3.tick_params(axis='x', colors='y')
-        ax3.set_ylim([-0.005, np.max(np.max(freqBlue), np.max(freqYellow)) + 0.02])
+        ax3.set_ylim([-0.005, np.max(np.max(freqBlue), 
+                                     np.max(freqYellow)) + 0.02])
         ax3.yaxis.set_label_coords(-0.2, 0.5)
         
         ax4.tick_params(axis='x', colors = 'b')
         ax3.set_xlabel('unique blue, yellow (nm)')
 
-        #ax4.spines['bottom'].set_visible(True)
         ax3.spines['bottom'].set_visible(False)
-        #ax4.set_visible(True)
         ax3.edgecolor  = 'y'
 
         if Volbrecht1997:
-            savename = 'uniqueHues_LMcomparison_Volbrecht.eps'
             ax2.legend()
             
         if savefigs:
+            savename = 'uniqueHues_LMcomparison_Volbrecht.eps'
             plt.savefig(savename)
         plt.show()
     
@@ -289,12 +282,6 @@ def plotModel(cm, plotModel=True, plotCurveFamily=False,
                  np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
         ax2.plot(FirstStage['lambdas'], 
                  np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-
-
-        #Not quite there. Need to be able to reference lms_Vl. Also consider
-        #the center weight.
-        
-        from operator import itemgetter
         
         sortedlist = []
         for key in SecondStage['percent']:
@@ -335,86 +322,57 @@ def plotModel(cm, plotModel=True, plotCurveFamily=False,
         ax2.set_xlabel('wavelength (nm)')
         
         if savefigs:
-            firsthalf = '../bps10.github.com/presentations/static/figures/'
-            secondhalf = 'colorModel/familyLMS_' + str(int(
-                                                fracLvM * 100)) + 'L.png'
-            plt.savefig(firsthalf + secondhalf)
+            plt.savefig('familyLMS_' + str(int(fracLvM * 100)) + 'L.eps')
         plt.show()
 
     if plotModel:
+
         model = cm.colorModel(age=age)
-        model.genModel(ConeRatio={'fracLvM': fracLvM, 's': 0.05, },
-            maxSens=maxSens, OD=OD)
-
-        FirstStage = model.returnFirstStage() 
-        ThirdStage = model.returnThirdStage()  
-
-        fig = plt.figure()
-        fig.set_tight_layout(True)
-        ax = fig.add_subplot(111)
-
-        ylim = [-0.28, 0.28]
-        
-        pf.AxisFormat()     
-        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[5, 4])
+        ax = pf.get_axes(1, 1, nticks=[5, 4])[0]
         ax.spines['left'].set_smart_bounds(False)
-
-        ax.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b-', linewidth=3, label=str(int(fracLvM * 100)) + "%L")
-        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r-', linewidth=3)
-
-        LvM = fracLvM + 0.2
-        model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
-            maxSens=maxSens, OD=OD)
-        ThirdStage = model.returnThirdStage()
         
-        ax.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b--', linewidth=3, label=str(int(LvM * 100)) + "%L")
-        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r--', linewidth=3)
-
-        LvM = fracLvM + 0.4
-        model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
-            maxSens=maxSens, OD=OD)
-        ThirdStage = model.returnThirdStage()
+        style = ['-', '--', '-.']
+        for i, LvM in enumerate(np.array([0.0, 0.2, 0.4]) + fracLvM):
+            model.genModel(ConeRatio={'fracLvM': LvM, 's': 0.05, },
+                           maxSens=maxSens, OD=OD)
+            FirstStage = model.returnFirstStage() 
+            ThirdStage = model.returnThirdStage()  
         
-        ax.plot(FirstStage['lambdas'], 
-                 np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=1.0)
-        ax.plot(FirstStage['lambdas'], ThirdStage['lCenter'],
-                'b-.', linewidth=3, label=str(int(LvM * 100)) + "%L")
-        ax.plot(FirstStage['lambdas'], ThirdStage['mCenter'],
-                'r-.', linewidth=3)
+            # get colors
+            blue = ThirdStage['lCenter'].clip(0, 1000)
+            yellow = ThirdStage['lCenter'].clip(-1000, 0)
+            red = ThirdStage['mCenter'].clip(0, 1000)
+            green = ThirdStage['mCenter'].clip(-1000, 0)
 
-        ax.set_ylim(ylim)
+            # plot
+            ax.plot(FirstStage['lambdas'], blue,
+                    'b' + style[i], label=str(int(LvM * 100)) + "%L")
+            ax.plot(FirstStage['lambdas'], yellow,
+                    'y' + style[i])
+            ax.plot(FirstStage['lambdas'], green, 'g' + style[i])
+            ax.plot(FirstStage['lambdas'], red, 'r' + style[i])
+
+            # add black line at zero
+            ax.plot(FirstStage['lambdas'],
+                    np.zeros((len(FirstStage['lambdas']))), 'k', linewidth=2.0)
+
+        ax.set_ylim([-0.28, 0.28])
         ax.set_xlim([FirstStage['wavelen']['startWave'],
                          FirstStage['wavelen']['endWave']])
 
         ax.legend(loc='upper right', fontsize=18)
-        ax.yaxis.set_label_coords(-0.2, 0.5)
 
         ax.set_ylabel('sensitivity')
         ax.set_xlabel('wavelength (nm)')
         
         if savefigs:
-            firsthalf = '../bps10.github.com/presentations/static/figures/'
-            secondhalf = 'colorModel/PercentL.png'
-            plt.savefig(firsthalf + secondhalf)
+            plt.savefig('percent_L.eps')
             
         plt.show()      
     
     if plotUniqueHues:
         model = cm.colorModel(age=age)
-
-        fig = plt.figure()
-        fig.set_tight_layout(True)
-        ax = fig.add_subplot(111)
-        pf.AxisFormat(linewidth=3)
-        pf.TufteAxis(ax, ['left', 'bottom'], Nticks=[4, 5])
+        ax = pf.get_axes(1, 1, nticks=[4, 5])[0]
         ax.spines['bottom'].set_smart_bounds(False)
 
         style = ['-', '--', '-.']
@@ -439,12 +397,10 @@ def plotModel(cm, plotModel=True, plotCurveFamily=False,
         ax.set_ylim([460, 600])
 
         ax.set_ylabel('wavelength (nm)')
-        ax.set_xlabel('% L vs M')
+        ax.set_xlabel('% L')
 
         if savefigs:
-            firsthalf = '../bps10.github.com/presentations/static/figures/'
-            secondhalf = 'colorModel/uniqueHues.png'
-            plt.savefig(firsthalf + secondhalf)
+            plt.savefig('unique_hues.eps')
         if SHOW:
             plt.show()
         else:
@@ -464,12 +420,12 @@ def main(args):
         raise ValueError('LM ratio must be between 0 and 1')
 
     if args.binom:
-        binomPlot()
+        binomPlot(cm)
     
     if args.eccen:
         eccentricityAnalysis(cm)
     
-    if args.ratio:
+    if args.volbrecht:
         LMratiosAnalysis(cm, Volbrecht1997=True, savefigs=args.save)
 
     if args.hues:
@@ -496,8 +452,8 @@ if __name__ == '__main__':
                         help="plot a series of binomial distributions")
     parser.add_argument("-e", "--eccen", action="store_true",
                         help="plot unique hue as a function of eccentricity")
-    parser.add_argument("-r", "--ratio", action="store_true", 
-                        help="plot unique hue as a function of LM ratio")
+    parser.add_argument("-v", "--volbrecht", action="store_true", 
+                        help="plot Carroll/Volbrecht analysis")
     parser.add_argument("-m", "--model", action="store_true",
                         help="plot the neitz color model")
     parser.add_argument("-c", "--curve", action="store_true",
@@ -515,7 +471,6 @@ if __name__ == '__main__':
                         help="set L:M ratio, default=0.25")
     parser.add_argument("-k", "--kuehni", action='store_true',
                         help="print Kuehni meta analysis of unique hues")
-    # add default save location
 
     args = parser.parse_args()
     main(args)
