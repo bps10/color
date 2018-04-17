@@ -6,10 +6,10 @@
 
 A parsimonious account of the distribution of monochromatic lights identified as unique, most notably green, has eluded models of color perception.  The standard model in the field consists of three stages predicated upon opponent signals between L- versus M-cones and S-cones versus L- plus M-cone signals.  This model fails to predict the variability in unique hue matching experiments.  We have developed a three stage zone model that takes into account L/M cone ratio to produce distributions of unique hues with accurate statistical characteristics.  The first stage of our model is the known sensitivity functions of the cone photoreceptors.  The second stage is composed of a center of either an L- or M-cone opposed to a surround of all three cones with varying contribution.  In the third stage these opponent signals are weighted based on the probability of occurrence and summated to construct valence curves for the blue-yellow and red-green mechanisms.  Varying the contribution of L- and M-cones to the surround based on an observed distribution of L:M (Carroll et al 2000), we accurately predict the distributions of unique blue, yellow and green.  Blue and yellow form narrow distributions around 470nm and 578nm, respectively, while green broadly distributes between 495 and 555nm and closely fits the unique green distribution of (Volbrecht et al 1997). We conclude that our model provides a convincing description of color processing and offers insight into the contribution of L/M ratio in color perception. 
 
-> Part of this work was presented at the [International Color Vision Society][icvs] meeting in Winchester, UK. A copy of the poster can be obtained [here][poster].
 
-[icvs]: http://macboy.uchicago.edu/
-[poster]: http://bps10.github.io/static/abstracts/ICVS_2013/Schmidt_ICVS_2013_formatted_2.pdf
+This work was described in the publication: 
+
+> [Neurobiological hypothesis of color appearance and hue perception](https://www.osapublishing.org/DirectPDFAccess/59C4123D-D542-852A-7CFA1CDE2D615555_279354/josaa-31-4-A195.pdf?da=1&id=279354&seq=0&mobile=no). Schmidt, Neitz, Neitz. 2014. Journal of the Optical Society of America.
 
 ## Installation
 
