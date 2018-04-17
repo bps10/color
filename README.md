@@ -4,8 +4,13 @@
 
 ## Motivation
 
-A parsimonious account of the distribution of monochromatic lights identified as unique, most notably green, has eluded models of color perception.  The standard model in the field consists of three stages predicated upon opponent signals between L- versus M-cones and S-cones versus L- plus M-cone signals.  This model fails to predict the variability in unique hue matching experiments.  We have developed a three stage zone model that takes into account L/M cone ratio to produce distributions of unique hues with accurate statistical characteristics.  The first stage of our model is the known sensitivity functions of the cone photoreceptors.  The second stage is composed of a center of either an L- or M-cone opposed to a surround of all three cones with varying contribution.  In the third stage these opponent signals are weighted based on the probability of occurrence and summated to construct valence curves for the blue-yellow and red-green mechanisms.  Varying the contribution of L- and M-cones to the surround based on an observed distribution of L:M (Carroll et al 2000), we accurately predict the distributions of unique blue, yellow and green.  Blue and yellow form narrow distributions around 470nm and 578nm, respectively, while green broadly distributes between 495 and 555nm and closely fits the unique green distribution of (Volbrecht et al 1997). We conclude that our model provides a convincing description of color processing and offers insight into the contribution of L/M ratio in color perception. 
-
+De Valois and De Valois [Vis. Res. 33, 1053 (1993)] showed that to explain hue appearance, S-cone signals have to
+be combined with M versus L opponent signals in two different ways to produce red–green and yellow–blue axes,
+respectively. Recently, it has been shown that color appearance is normal for individuals with genetic mutations
+that block S-cone input to blue-ON ganglion cells. This is inconsistent with the De Valois hypothesis in which
+S-opponent konio-geniculate signals are combined with L-M signals at a third processing stage in cortex. Instead,
+here we show that color appearance, including individual differences never explained before, are predicted by a
+model in which S-cone signals are combined with L versus M signals in the outer retina. 
 
 This work was described in the publication: 
 
